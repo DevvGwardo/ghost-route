@@ -2,14 +2,15 @@ import express from "express";
 import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { healthPayload } from "./routes/system.js";
-import { apiLimiter, routeLimiter, noKeyLeak } from "./security.js";
+import { apiLimiter, routeLimiter, cameraWriteLimiter, noKeyLeak } from "./security.js";
 
 export const app = express();
 
+app.set("trust proxy", 1);
 app.use(cors());
 app.use(apiLimiter);
 app.use("/api/route", routeLimiter);
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 // Malformed JSON bodies → shaped 400 (before the generic 500 handler).
 app.use(
   (

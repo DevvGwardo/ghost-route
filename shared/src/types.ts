@@ -96,6 +96,13 @@ export interface SystemStatusResponse {
   osrm: 'https://router.project-osrm.org';
 }
 
+export interface VerifyKeyResponse {
+  mode: 'jev' | 'fake';
+  valid: boolean;
+  confidence?: number;
+  error?: string;
+}
+
 // BYOK: per-request user TypeSafe key, sent as `x-typesafe-key` header.
 // Never log the key.
 export interface ByokOpts {

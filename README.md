@@ -45,6 +45,7 @@ building extrusions) whenever routes are shown; the Mountain/Box button toggles
 - `POST /api/route` `{ origin, destination, avoidFlock=true, bufferMeters=150 }`
   → `{ routes: [{ id, coordinates, distanceM, durationS, exposures, exposureCount, score, jev }], rankedBy, jevMode }`
 - `GET /api/system/status` → `{ mode, threshold, cameraCount, osrm }`
+- `GET /api/system/verify` (header `x-typesafe-key`) → `{ mode, valid, confidence?, error? }`
 
 ## How avoidance works
 
@@ -72,18 +73,25 @@ node scripts/repro-avoid.mjs           # avoidance proof: detour 3 → 0 exposur
 
 No key ships with the repo. There are two ways to activate live JEV ranking:
 
-1. **In the app (per user):** open Route options → JEV key field, paste your
-   key, Save. It's stored only in your browser's localStorage and sent as an
+1. **In the app (per user, recommended for open-source users):** open Route options → JEV key field, paste your
+   key, Save, then **Test**. It's stored only in your browser's localStorage and sent as an
    `x-typesafe-key` header on route requests. The header chip shows
-   "JEV live" when active. Clear it anytime to go back to heuristic mode.
+   "JEV live" only when the key verifies AND the last ranking was live (`rankedBy: jev`).
+   Clear it anytime to go back to heuristic mode. Without a key, clean-route search still works via heuristic.
 2. **On the server (default for all users):** set `TYPESAFE_API_KEY` in `.env`
-   (see `.env.example`; request a key at typesafe.ai early access).
+   (see `.env.example`, `PORT=8801`; request a key at typesafe.ai early access).
 
 Precedence per request: `x-typesafe-key` header → `TYPESAFE_API_KEY` env →
 none (`fake` mode). Without any key, `jevMode: 'fake'` serves the same
 response shape deterministically. The server never logs, persists, or echoes
 keys; below `CONFIDENCE_THRESHOLD` (default 0.40) the heuristic best is served
 instead, flagged `fallbackUsed: true`.
+
+Troubleshooting a pasted key:
+- `GET /api/system/verify` with `x-typesafe-key` header returns `{ valid, confidence?, error? }`
+  (`unauthorized` = 401/403 from TypeSafe, `unreachable` = network/timeout). The UI Test button calls this.
+- If routes show `fallback` + `heuristic`, the key was present but Jev was unreachable, low-confidence, or invalid — check Test output.
+- `GET /api/system/status` shows `{ mode, threshold, cameraCount, osrm }` for the current key.
 
 ## Notes
 

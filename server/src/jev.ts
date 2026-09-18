@@ -24,6 +24,56 @@ export interface RankResult {
 
 const SYSTEMONE_URL = "https://api.typesafe.ai/v1/systemone";
 const TIMEOUT_MS = 10000;
+const VERIFY_TIMEOUT_MS = 5000;
+
+export interface VerifyResult {
+  valid: boolean;
+  confidence?: number;
+  error?: string;
+}
+
+/** Fast validity check for a pasted BYOK key. Minimal live call, never throws. */
+export async function verifyKey(apiKey: string): Promise<VerifyResult> {
+  const key = resolveKey(apiKey);
+  if (!key) return { valid: false, error: "key-required" };
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), VERIFY_TIMEOUT_MS);
+  try {
+    const res = await fetch(SYSTEMONE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        questions: [
+          {
+            type: "choice",
+            question: "Verify key: pick route r1.",
+            options: [
+              { id: "r1", exposureCount: 0, durationS: 100, distanceM: 1000 },
+              { id: "r2", exposureCount: 1, durationS: 100, distanceM: 1000 },
+            ],
+          },
+        ],
+      }),
+      signal: ctrl.signal,
+    });
+    if (res.status === 401 || res.status === 403)
+      return { valid: false, error: "unauthorized" };
+    if (!res.ok) return { valid: false, error: "unreachable" };
+    const data = (await res.json()) as { confidence?: unknown };
+    const confidence = Number((data as { confidence?: unknown }).confidence ?? 0);
+    return {
+      valid: true,
+      confidence: Number.isFinite(confidence) ? confidence : 0,
+    };
+  } catch {
+    return { valid: false, error: "unreachable" };
+  } finally {
+    clearTimeout(t);
+  }
+}
 
 export function resolveKey(provided?: string): string {
   const p = (provided ?? "").trim();

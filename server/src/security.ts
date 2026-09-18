@@ -39,6 +39,9 @@ export const apiLimiter = makeLimiter(120, WINDOW_MS);
 /** Tight limit for POST /api/route (fans out to OSRM): 10 req/min/IP. */
 export const routeLimiter = makeLimiter(10, WINDOW_MS);
 
+/** Spam guard for crowd-sourced camera writes: 30 req/min/IP. */
+export const cameraWriteLimiter = makeLimiter(30, WINDOW_MS);
+
 /** Test hook: reset in-memory buckets. */
 export function __resetLimiters(): void {
   for (const b of limiterBuckets) b.clear();

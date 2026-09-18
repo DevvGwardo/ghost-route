@@ -94,8 +94,14 @@ export function camerasInBbox(
 
 export function addCamera(lat: number, lon: number, address?: string): Camera {
   assertLatLon(lat, lon);
-  if (address !== undefined && (typeof address !== "string" || address.length === 0)) {
-    throw new RangeError("address must be a non-empty string when provided");
+  if (address !== undefined && (typeof address !== "string" || address.length === 0 || address.length > 500)) {
+    throw new RangeError("address must be a non-empty string (max 500 chars) when provided");
+  }
+  // Dedupe: same user spam within ~10m returns the existing node.
+  for (const c of cameras) {
+    const dLat = (c.lat - lat) * 111320;
+    const dLon = (c.lon - lon) * 111320 * Math.cos((lat * Math.PI) / 180);
+    if (Math.hypot(dLat, dLon) < 10) return c;
   }
   const camera: Camera = {
     id: nextId(),

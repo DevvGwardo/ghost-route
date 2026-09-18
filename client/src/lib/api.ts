@@ -11,6 +11,7 @@ import type {
   RouteStep,
   ScoredRoute,
   SystemStatusResponse,
+  VerifyKeyResponse,
 } from '../../../shared/src/types';
 
 export class ApiError extends Error {
@@ -76,6 +77,10 @@ export function getSystemStatus(opts?: ByokOpts): Promise<SystemStatusResponse> 
   return req<SystemStatusResponse>('/api/system/status', undefined, opts);
 }
 
+export function verifySystemKey(typesafeKey: string): Promise<VerifyKeyResponse> {
+  return req<VerifyKeyResponse>('/api/system/verify', undefined, { typesafeKey });
+}
+
 export function getCameras(bbox: Bbox, limit = 500): Promise<CamerasResponse> {
   const q = `bbox=${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}&limit=${limit}`;
   return req<CamerasResponse>(`/api/cameras?${q}`);
@@ -111,4 +116,5 @@ export type {
   RouteResponse,
   RouteStep,
   ScoredRoute,
+  VerifyKeyResponse,
 };

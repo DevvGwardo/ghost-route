@@ -4,7 +4,7 @@ import MapView, { type BBox, type RecenterSignal } from './components/MapView';
 import DirectionsCard from './components/DirectionsCard';
 import RouteSheet from './components/RouteSheet';
 import { ApiError, getCameras, postRoute } from './lib/api';
-import { TYPESAFE_KEY_STORAGE } from './components/KeySettings';
+import { TYPESAFE_KEY_STORAGE, type KeyValid } from './components/KeySettings';
 import './app.css';
 
 // Local minimal copies of the brief's shapes (api agent owns lib/api.ts + shared/types.ts).
@@ -71,6 +71,7 @@ export default function App() {
       return '';
     }
   });
+  const [keyValid, setKeyValid] = useState<KeyValid>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
@@ -120,6 +121,8 @@ export default function App() {
       setRankedBy(res.rankedBy);
       setJevMode(res.jevMode);
       setSelectedId(res.routes.length > 0 ? res.routes[0].id : null);
+      // Server proved the key works — mark live even without explicit Test.
+      if (res.rankedBy === 'jev' && res.jevMode === 'jev') setKeyValid(true);
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
         setError('Too many requests — wait a moment, then try again.');
@@ -176,7 +179,7 @@ export default function App() {
     return () => window.clearTimeout(t);
   }, [geoNotice]);
 
-  const jevLive = typesafeKey.trim().length > 0 || jevMode === 'jev';
+  const jevLive = jevMode === 'jev' && (keyValid === true || rankedBy === 'jev');
 
   return (
     <div className="gm-root">
@@ -223,6 +226,8 @@ export default function App() {
           error={error}
           typesafeKey={typesafeKey}
           onKeyChange={handleKeyChange}
+          keyValid={keyValid}
+          onKeyValidChange={setKeyValid}
         />
       </header>
 

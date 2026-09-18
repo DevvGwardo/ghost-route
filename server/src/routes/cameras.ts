@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { camerasInBbox, addCamera } from '../store.js';
+import { cameraWriteLimiter } from '../security.js';
 
 const router = Router();
 
@@ -51,7 +52,7 @@ router.get('/', (req, res) => {
 });
 
 // POST / { lat, lon, address? }
-router.post('/', (req, res) => {
+router.post('/', cameraWriteLimiter, (req, res) => {
   const { lat, lon, address } = req.body ?? {};
   if (
     !isFiniteNum(lat) || lat < -90 || lat > 90 ||
@@ -60,7 +61,7 @@ router.post('/', (req, res) => {
     res.status(400).json({ error: 'coordinates-invalid' });
     return;
   }
-  if (address !== undefined && typeof address !== 'string') {
+  if (address !== undefined && (typeof address !== 'string' || address.length > 500)) {
     res.status(400).json({ error: 'address-invalid' });
     return;
   }

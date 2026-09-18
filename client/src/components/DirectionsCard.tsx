@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import KeySettings from './KeySettings';
+import KeySettings, { type KeyValid } from './KeySettings';
 import {
   ArrowLeft,
   ArrowUpDown,
@@ -217,6 +217,8 @@ export interface DirectionsCardProps {
   error: string | null;
   typesafeKey: string;
   onKeyChange: (key: string) => void;
+  keyValid: KeyValid;
+  onKeyValidChange: (v: KeyValid) => void;
 }
 
 function fmtCoord(p: LatLon): string {
@@ -244,6 +246,8 @@ export default function DirectionsCard(props: DirectionsCardProps) {
     error,
     typesafeKey,
     onKeyChange,
+    keyValid,
+    onKeyValidChange,
   } = props;
   const [optionsOpen, setOptionsOpen] = useState(false);
 
@@ -361,7 +365,7 @@ export default function DirectionsCard(props: DirectionsCardProps) {
             />
             <output>{bufferMeters} m</output>
           </label>
-          <KeySettings typesafeKey={typesafeKey} onKeyChange={onKeyChange} />
+          <KeySettings typesafeKey={typesafeKey} onKeyChange={onKeyChange} keyValid={keyValid} onKeyValidChange={onKeyValidChange} />
         </div>
       )}
 
