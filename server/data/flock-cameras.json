@@ -1,0 +1,4641 @@
+[
+  {
+    "id": "deflock-12644029119",
+    "lat": 30.253962,
+    "lon": -97.808341,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644031018",
+    "lat": 30.257391,
+    "lon": -97.80322,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644093867",
+    "lat": 30.226098,
+    "lon": -97.823036,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644101214",
+    "lat": 30.228858,
+    "lon": -97.82117,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644104365",
+    "lat": 30.230486,
+    "lon": -97.81387,
+    "source": "deflock",
+    "verified": false,
+    "address": "Sunset Valley"
+  },
+  {
+    "id": "deflock-12644104583",
+    "lat": 30.227781,
+    "lon": -97.821726,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644104584",
+    "lat": 30.227871,
+    "lon": -97.821663,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644106847",
+    "lat": 30.229283,
+    "lon": -97.820226,
+    "source": "deflock",
+    "verified": false,
+    "address": "Sunset Valley"
+  },
+  {
+    "id": "deflock-12644114243",
+    "lat": 30.218112,
+    "lon": -97.828828,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644114926",
+    "lat": 30.219987,
+    "lon": -97.827636,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644116857",
+    "lat": 30.220289,
+    "lon": -97.828268,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12644118760",
+    "lat": 30.218455,
+    "lon": -97.829381,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12692038281",
+    "lat": 30.002011,
+    "lon": -97.738039,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12839147384",
+    "lat": 30.25713,
+    "lon": -97.747051,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12840680713",
+    "lat": 30.256308,
+    "lon": -97.809888,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12840680714",
+    "lat": 30.258675,
+    "lon": -97.810588,
+    "source": "deflock",
+    "verified": true,
+    "address": "Simon Property Group"
+  },
+  {
+    "id": "deflock-12840680715",
+    "lat": 30.260719,
+    "lon": -97.8079,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12840710926",
+    "lat": 30.25961,
+    "lon": -97.804902,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12843067821",
+    "lat": 30.282078,
+    "lon": -97.808223,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12843067822",
+    "lat": 30.292097,
+    "lon": -97.798169,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13095304461",
+    "lat": 30.228397,
+    "lon": -97.822713,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13095304462",
+    "lat": 30.229194,
+    "lon": -97.822081,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13095304463",
+    "lat": 30.228764,
+    "lon": -97.821217,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13095304464",
+    "lat": 30.227639,
+    "lon": -97.821295,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13095304465",
+    "lat": 30.229138,
+    "lon": -97.819453,
+    "source": "deflock",
+    "verified": true,
+    "address": "Sunset Valley"
+  },
+  {
+    "id": "deflock-13095304466",
+    "lat": 30.225872,
+    "lon": -97.804223,
+    "source": "deflock",
+    "verified": true,
+    "address": "Sunset Valley"
+  },
+  {
+    "id": "deflock-13115162289",
+    "lat": 30.257164,
+    "lon": -97.913854,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13157368237",
+    "lat": 30.027567,
+    "lon": -97.851515,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13157368238",
+    "lat": 30.089055,
+    "lon": -97.820078,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13157368239",
+    "lat": 30.079664,
+    "lon": -97.824753,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13189670829",
+    "lat": 30.215688,
+    "lon": -97.701051,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13189670830",
+    "lat": 30.215619,
+    "lon": -97.701038,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13189670831",
+    "lat": 30.215011,
+    "lon": -97.70299,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13189670832",
+    "lat": 30.215065,
+    "lon": -97.703232,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13191340689",
+    "lat": 30.208466,
+    "lon": -97.973934,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13191340690",
+    "lat": 30.207287,
+    "lon": -97.973285,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13201107274",
+    "lat": 30.219584,
+    "lon": -97.82666,
+    "source": "deflock",
+    "verified": true,
+    "address": "Sunset Valley"
+  },
+  {
+    "id": "deflock-13201107275",
+    "lat": 30.226904,
+    "lon": -97.822091,
+    "source": "deflock",
+    "verified": true,
+    "address": "Sunset Valley"
+  },
+  {
+    "id": "deflock-13201107276",
+    "lat": 30.233017,
+    "lon": -97.820748,
+    "source": "deflock",
+    "verified": true,
+    "address": "Sunset Valley"
+  },
+  {
+    "id": "deflock-13201107277",
+    "lat": 30.234076,
+    "lon": -97.812325,
+    "source": "deflock",
+    "verified": true,
+    "address": "Sunset Valley"
+  },
+  {
+    "id": "deflock-13207979036",
+    "lat": 30.167025,
+    "lon": -97.782165,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13207979037",
+    "lat": 30.167198,
+    "lon": -97.783876,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13207979038",
+    "lat": 30.167806,
+    "lon": -97.784572,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13207979039",
+    "lat": 30.168898,
+    "lon": -97.78418,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13239177398",
+    "lat": 30.234138,
+    "lon": -97.812786,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13239272990",
+    "lat": 30.232537,
+    "lon": -97.814358,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13239272991",
+    "lat": 30.232545,
+    "lon": -97.815805,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13239272992",
+    "lat": 30.230016,
+    "lon": -97.815495,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13272541101",
+    "lat": 30.233022,
+    "lon": -97.754434,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13272541801",
+    "lat": 30.233022,
+    "lon": -97.754434,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293880001",
+    "lat": 30.162046,
+    "lon": -97.778357,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293880301",
+    "lat": 30.157984,
+    "lon": -97.779848,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13298830601",
+    "lat": 30.094954,
+    "lon": -97.91697,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13298831201",
+    "lat": 30.094934,
+    "lon": -97.917153,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302423401",
+    "lat": 30.23142,
+    "lon": -97.751187,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13320433501",
+    "lat": 30.225907,
+    "lon": -97.752074,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13322874601",
+    "lat": 30.226817,
+    "lon": -97.754039,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13322875501",
+    "lat": 30.232953,
+    "lon": -97.758001,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13326994803",
+    "lat": 30.093818,
+    "lon": -97.848347,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13328438302",
+    "lat": 30.100693,
+    "lon": -97.860994,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13328465402",
+    "lat": 30.100725,
+    "lon": -97.858903,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13328471801",
+    "lat": 30.100445,
+    "lon": -97.860991,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13328623109",
+    "lat": 30.049752,
+    "lon": -97.874848,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13328623110",
+    "lat": 30.101767,
+    "lon": -97.875105,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13345306046",
+    "lat": 30.015072,
+    "lon": -97.866022,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13348763560",
+    "lat": 30.012715,
+    "lon": -97.857149,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13348763561",
+    "lat": 30.01426,
+    "lon": -97.857918,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13348763562",
+    "lat": 30.013416,
+    "lon": -97.858433,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13348763563",
+    "lat": 30.019844,
+    "lon": -97.85498,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police department"
+  },
+  {
+    "id": "deflock-13350676431",
+    "lat": 30.013621,
+    "lon": -97.856563,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13352241682",
+    "lat": 30.008682,
+    "lon": -97.861367,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13355887165",
+    "lat": 30.277327,
+    "lon": -97.820102,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13356308439",
+    "lat": 30.00135,
+    "lon": -97.871452,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13356561831",
+    "lat": 30.000625,
+    "lon": -97.871871,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13356561832",
+    "lat": 30.000285,
+    "lon": -97.870902,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13356666897",
+    "lat": 30.030996,
+    "lon": -97.848723,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13356673533",
+    "lat": 30.0121,
+    "lon": -97.891991,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13356673534",
+    "lat": 30.01343,
+    "lon": -97.83547,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle police department"
+  },
+  {
+    "id": "deflock-13356673540",
+    "lat": 30.031321,
+    "lon": -97.846955,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13356673541",
+    "lat": 30.031855,
+    "lon": -97.839055,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13356884001",
+    "lat": 30.012352,
+    "lon": -97.859523,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13356884003",
+    "lat": 30.028143,
+    "lon": -97.856923,
+    "source": "deflock",
+    "verified": true,
+    "address": "Land Owner"
+  },
+  {
+    "id": "deflock-13358645501",
+    "lat": 30.222337,
+    "lon": -97.748687,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13378904947",
+    "lat": 30.028099,
+    "lon": -97.858479,
+    "source": "deflock",
+    "verified": true,
+    "address": "Land owner"
+  },
+  {
+    "id": "deflock-13378904948",
+    "lat": 30.027548,
+    "lon": -97.854894,
+    "source": "deflock",
+    "verified": true,
+    "address": "Landowner"
+  },
+  {
+    "id": "deflock-13398322401",
+    "lat": 30.048462,
+    "lon": -97.875421,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13398324701",
+    "lat": 30.02761,
+    "lon": -97.888164,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13398333101",
+    "lat": 30.025231,
+    "lon": -97.907769,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13398343001",
+    "lat": 30.047324,
+    "lon": -97.989524,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13429287202",
+    "lat": 30.156431,
+    "lon": -97.761245,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13429290101",
+    "lat": 30.156043,
+    "lon": -97.761246,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13433355301",
+    "lat": 30.1563,
+    "lon": -97.761366,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13440766801",
+    "lat": 30.27704,
+    "lon": -97.809261,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13447434701",
+    "lat": 30.228484,
+    "lon": -97.757294,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13454386701",
+    "lat": 30.288169,
+    "lon": -97.796607,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13472282516",
+    "lat": 30.226617,
+    "lon": -97.823878,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13473740401",
+    "lat": 30.15185,
+    "lon": -97.762849,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13473740901",
+    "lat": 30.151987,
+    "lon": -97.762975,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13507815756",
+    "lat": 30.188994,
+    "lon": -97.77224,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13507815757",
+    "lat": 30.189817,
+    "lon": -97.771687,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13510728001",
+    "lat": 30.17336,
+    "lon": -97.934088,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13510732201",
+    "lat": 30.179905,
+    "lon": -97.92954,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13523010801",
+    "lat": 30.264745,
+    "lon": -97.757157,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13523011901",
+    "lat": 30.261953,
+    "lon": -97.758141,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13523121651",
+    "lat": 30.266391,
+    "lon": -97.756092,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13525314701",
+    "lat": 30.275192,
+    "lon": -97.730399,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13525446901",
+    "lat": 30.261311,
+    "lon": -97.737296,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13525485601",
+    "lat": 30.261439,
+    "lon": -97.737317,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13529232002",
+    "lat": 30.239034,
+    "lon": -97.788655,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13529236601",
+    "lat": 30.246249,
+    "lon": -97.778536,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13529242901",
+    "lat": 30.238693,
+    "lon": -97.789366,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13529472601",
+    "lat": 30.264055,
+    "lon": -97.746931,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13530911101",
+    "lat": 30.279291,
+    "lon": -97.81298,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13531405801",
+    "lat": 30.273021,
+    "lon": -97.765113,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13537037601",
+    "lat": 30.286047,
+    "lon": -97.763295,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13538595301",
+    "lat": 30.267004,
+    "lon": -97.757463,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13538792701",
+    "lat": 30.278721,
+    "lon": -97.76864,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13539268501",
+    "lat": 30.280979,
+    "lon": -97.766116,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13543879001",
+    "lat": 30.292448,
+    "lon": -97.759197,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13545218745",
+    "lat": 30.276725,
+    "lon": -97.700405,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13546606532",
+    "lat": 30.280793,
+    "lon": -97.703045,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13555993901",
+    "lat": 30.245086,
+    "lon": -97.802771,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13555994302",
+    "lat": 30.24421,
+    "lon": -97.801884,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13567962501",
+    "lat": 30.291758,
+    "lon": -97.761201,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13568002801",
+    "lat": 30.28787,
+    "lon": -97.763096,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13568387101",
+    "lat": 30.283066,
+    "lon": -97.766741,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13572940201",
+    "lat": 30.238258,
+    "lon": -97.798766,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13572948101",
+    "lat": 30.251093,
+    "lon": -97.802369,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13591746702",
+    "lat": 30.282899,
+    "lon": -97.702718,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13593550202",
+    "lat": 30.264694,
+    "lon": -97.756946,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13593904701",
+    "lat": 30.262105,
+    "lon": -97.75789,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13596859001",
+    "lat": 30.292353,
+    "lon": -97.798235,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13596861601",
+    "lat": 30.293263,
+    "lon": -97.822354,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13603527101",
+    "lat": 30.201081,
+    "lon": -97.76573,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13606861901",
+    "lat": 30.258827,
+    "lon": -97.759194,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13608455601",
+    "lat": 30.282618,
+    "lon": -97.702751,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13610431602",
+    "lat": 30.241728,
+    "lon": -97.801389,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13611063786",
+    "lat": 30.00047,
+    "lon": -97.821451,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13635175701",
+    "lat": 30.205154,
+    "lon": -97.73679,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13639497301",
+    "lat": 30.256584,
+    "lon": -97.801968,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13644012301",
+    "lat": 30.203685,
+    "lon": -97.734202,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13665126501",
+    "lat": 30.1152,
+    "lon": -97.808094,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13678018101",
+    "lat": 30.201117,
+    "lon": -97.766771,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13678019201",
+    "lat": 30.200899,
+    "lon": -97.766378,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13678019901",
+    "lat": 30.201881,
+    "lon": -97.76732,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13736098102",
+    "lat": 30.035809,
+    "lon": -97.846981,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13811513025",
+    "lat": 30.016383,
+    "lon": -97.864753,
+    "source": "deflock",
+    "verified": true,
+    "address": "Kyle Police Department"
+  },
+  {
+    "id": "deflock-13815587601",
+    "lat": 30.168799,
+    "lon": -97.93835,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13815589401",
+    "lat": 30.168936,
+    "lon": -97.93856,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13819603801",
+    "lat": 30.190659,
+    "lon": -97.77253,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13840759108",
+    "lat": 30.298098,
+    "lon": -97.752024,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13854687801",
+    "lat": 30.273502,
+    "lon": -97.845339,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13854687802",
+    "lat": 30.273578,
+    "lon": -97.845242,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13876737001",
+    "lat": 30.201824,
+    "lon": -97.721242,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13876738701",
+    "lat": 30.208731,
+    "lon": -97.723668,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13902015780",
+    "lat": 30.196515,
+    "lon": -97.768817,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13902015781",
+    "lat": 30.196494,
+    "lon": -97.76885,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13924494301",
+    "lat": 30.246752,
+    "lon": -97.765449,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13926345003",
+    "lat": 30.223895,
+    "lon": -97.763914,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13926346301",
+    "lat": 30.223361,
+    "lon": -97.763021,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13946466002",
+    "lat": 30.10803,
+    "lon": -97.875277,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13947838102",
+    "lat": 30.100479,
+    "lon": -97.865343,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13947838404",
+    "lat": 30.100356,
+    "lon": -97.865205,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13947858901",
+    "lat": 30.098189,
+    "lon": -97.856051,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13947860601",
+    "lat": 30.095101,
+    "lon": -97.855818,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13950150601",
+    "lat": 30.100397,
+    "lon": -97.858778,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13968513001",
+    "lat": 30.078112,
+    "lon": -97.848381,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13971181901",
+    "lat": 30.228441,
+    "lon": -97.706762,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13971183501",
+    "lat": 30.229739,
+    "lon": -97.705701,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13971647401",
+    "lat": 30.07771,
+    "lon": -97.820407,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13973254301",
+    "lat": 30.206264,
+    "lon": -97.911519,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13988395001",
+    "lat": 30.115346,
+    "lon": -97.808237,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14011476230",
+    "lat": 30.217364,
+    "lon": -97.846809,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14022830253",
+    "lat": 30.020937,
+    "lon": -97.873698,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14022842654",
+    "lat": 30.021162,
+    "lon": -97.87244,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14027328501",
+    "lat": 30.047047,
+    "lon": -97.9848,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14041596201",
+    "lat": 30.237041,
+    "lon": -97.839947,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14042246701",
+    "lat": 30.041371,
+    "lon": -97.874281,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14046813902",
+    "lat": 30.231556,
+    "lon": -97.791438,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14047311701",
+    "lat": 30.231552,
+    "lon": -97.791695,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14047395002",
+    "lat": 30.248011,
+    "lon": -97.770205,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14047402902",
+    "lat": 30.242157,
+    "lon": -97.759655,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14047402903",
+    "lat": 30.242092,
+    "lon": -97.759555,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14047402904",
+    "lat": 30.242163,
+    "lon": -97.759566,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14047414501",
+    "lat": 30.242078,
+    "lon": -97.759666,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14047614101",
+    "lat": 30.277725,
+    "lon": -97.767311,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14049667301",
+    "lat": 30.127807,
+    "lon": -97.985136,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14049668101",
+    "lat": 30.128194,
+    "lon": -97.985194,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14051947502",
+    "lat": 30.089845,
+    "lon": -97.72889,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14052603301",
+    "lat": 30.088703,
+    "lon": -97.728671,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14055047201",
+    "lat": 30.215442,
+    "lon": -97.79749,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14055048101",
+    "lat": 30.264669,
+    "lon": -97.737973,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13249163292",
+    "lat": 30.140778,
+    "lon": -97.567631,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13311071387",
+    "lat": 30.293392,
+    "lon": -97.675244,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13324614810",
+    "lat": 30.029588,
+    "lon": -97.673523,
+    "source": "deflock",
+    "verified": true,
+    "address": "Caldwell County Sheriff"
+  },
+  {
+    "id": "deflock-13457364709",
+    "lat": 30.174023,
+    "lon": -97.690373,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13475125459",
+    "lat": 30.173891,
+    "lon": -97.689925,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13545218746",
+    "lat": 30.273455,
+    "lon": -97.698,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13545218747",
+    "lat": 30.258921,
+    "lon": -97.693663,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13545218748",
+    "lat": 30.258968,
+    "lon": -97.693384,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13545218749",
+    "lat": 30.036755,
+    "lon": -97.688229,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13545218750",
+    "lat": 30.063437,
+    "lon": -97.69242,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13545218751",
+    "lat": 30.097452,
+    "lon": -97.693919,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13577744901",
+    "lat": 30.119884,
+    "lon": -97.428438,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13585089701",
+    "lat": 30.052389,
+    "lon": -97.690523,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13585815702",
+    "lat": 30.188628,
+    "lon": -97.586256,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13591327301",
+    "lat": 30.176237,
+    "lon": -97.529531,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13591337702",
+    "lat": 30.117803,
+    "lon": -97.424823,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13599592500",
+    "lat": 30.110212,
+    "lon": -97.427785,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13599633601",
+    "lat": 30.138827,
+    "lon": -97.563197,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13628476501",
+    "lat": 30.116605,
+    "lon": -97.422615,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13665983501",
+    "lat": 30.066,
+    "lon": -97.664006,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-7861764199",
+    "lat": 30.584316,
+    "lon": -97.876912,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12337924856",
+    "lat": 30.525883,
+    "lon": -97.855108,
+    "source": "deflock",
+    "verified": false,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-12627498558",
+    "lat": 30.464052,
+    "lon": -97.789272,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12784858466",
+    "lat": 30.475603,
+    "lon": -97.815381,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12784859678",
+    "lat": 30.475885,
+    "lon": -97.816231,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12961061880",
+    "lat": 30.531235,
+    "lon": -97.78983,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13031411331",
+    "lat": 30.50759,
+    "lon": -97.775682,
+    "source": "deflock",
+    "verified": true,
+    "address": "Cedar Park Police"
+  },
+  {
+    "id": "deflock-13104063656",
+    "lat": 30.533014,
+    "lon": -97.859525,
+    "source": "deflock",
+    "verified": true,
+    "address": "Leander Police Department"
+  },
+  {
+    "id": "deflock-13109425711",
+    "lat": 30.597137,
+    "lon": -97.850523,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13112535517",
+    "lat": 30.30454,
+    "lon": -97.939103,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142629",
+    "lat": 30.352264,
+    "lon": -97.794497,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142630",
+    "lat": 30.357008,
+    "lon": -97.790554,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13115224215",
+    "lat": 30.307795,
+    "lon": -97.930083,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13115243232",
+    "lat": 30.390385,
+    "lon": -97.848236,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13115244077",
+    "lat": 30.303096,
+    "lon": -97.930521,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13115254519",
+    "lat": 30.308561,
+    "lon": -97.92366,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13115295082",
+    "lat": 30.309645,
+    "lon": -97.918088,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13115295083",
+    "lat": 30.309951,
+    "lon": -97.918604,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13115318102",
+    "lat": 30.31095,
+    "lon": -97.918046,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13115318103",
+    "lat": 30.30854,
+    "lon": -97.91787,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13136988932",
+    "lat": 30.558067,
+    "lon": -97.843138,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13136994114",
+    "lat": 30.557961,
+    "lon": -97.844729,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13136997022",
+    "lat": 30.564341,
+    "lon": -97.823659,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13136998763",
+    "lat": 30.563714,
+    "lon": -97.826352,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13147462612",
+    "lat": 30.557861,
+    "lon": -97.845127,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13147462613",
+    "lat": 30.5576,
+    "lon": -97.845917,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13147462614",
+    "lat": 30.476103,
+    "lon": -97.975229,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13172745251",
+    "lat": 30.480096,
+    "lon": -97.833624,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13172745253",
+    "lat": 30.480091,
+    "lon": -97.833619,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13172745255",
+    "lat": 30.478386,
+    "lon": -97.834542,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13172745256",
+    "lat": 30.47838,
+    "lon": -97.834546,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13172745258",
+    "lat": 30.47744,
+    "lon": -97.835275,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13172745259",
+    "lat": 30.477435,
+    "lon": -97.835265,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13191556904",
+    "lat": 30.479198,
+    "lon": -97.834107,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13191556905",
+    "lat": 30.479919,
+    "lon": -97.833989,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13191556906",
+    "lat": 30.479921,
+    "lon": -97.833984,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13200813086",
+    "lat": 30.54044,
+    "lon": -97.84915,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13226735601",
+    "lat": 30.468128,
+    "lon": -97.793695,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13226737701",
+    "lat": 30.468488,
+    "lon": -97.791215,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13231484901",
+    "lat": 30.477327,
+    "lon": -97.799797,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13231486301",
+    "lat": 30.478347,
+    "lon": -97.799419,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13233148447",
+    "lat": 30.306828,
+    "lon": -97.709041,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13235667394",
+    "lat": 30.568469,
+    "lon": -97.898029,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13239311442",
+    "lat": 30.304175,
+    "lon": -97.940987,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13239311443",
+    "lat": 30.304624,
+    "lon": -97.939845,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13246330759",
+    "lat": 30.589314,
+    "lon": -97.832494,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13260596060",
+    "lat": 30.548715,
+    "lon": -97.793911,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13276480401",
+    "lat": 30.360133,
+    "lon": -97.832091,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13276482301",
+    "lat": 30.360305,
+    "lon": -97.832011,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13289646370",
+    "lat": 30.478454,
+    "lon": -97.799816,
+    "source": "deflock",
+    "verified": false,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13299657590",
+    "lat": 30.515848,
+    "lon": -97.870412,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13300646001",
+    "lat": 30.515828,
+    "lon": -97.870304,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13300646401",
+    "lat": 30.513593,
+    "lon": -97.876365,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13300646601",
+    "lat": 30.518874,
+    "lon": -97.902758,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13301039609",
+    "lat": 30.512432,
+    "lon": -97.700258,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302016901",
+    "lat": 30.54251,
+    "lon": -97.767211,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13308471301",
+    "lat": 30.542724,
+    "lon": -97.839652,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13309079804",
+    "lat": 30.308594,
+    "lon": -97.709158,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13309079805",
+    "lat": 30.307904,
+    "lon": -97.70762,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13309079806",
+    "lat": 30.306554,
+    "lon": -97.708468,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13310776009",
+    "lat": 30.396166,
+    "lon": -97.726738,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13310776010",
+    "lat": 30.403459,
+    "lon": -97.724066,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13310776011",
+    "lat": 30.403706,
+    "lon": -97.723779,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13310776012",
+    "lat": 30.404824,
+    "lon": -97.723975,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13310776013",
+    "lat": 30.399316,
+    "lon": -97.725588,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13310776014",
+    "lat": 30.398145,
+    "lon": -97.726037,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13316684301",
+    "lat": 30.507982,
+    "lon": -97.775476,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13316685001",
+    "lat": 30.5077,
+    "lon": -97.775849,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13316685801",
+    "lat": 30.532102,
+    "lon": -97.786659,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13316685802",
+    "lat": 30.468815,
+    "lon": -97.794245,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13316688101",
+    "lat": 30.469419,
+    "lon": -97.792107,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13322721801",
+    "lat": 30.520127,
+    "lon": -97.83332,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13322742701",
+    "lat": 30.535948,
+    "lon": -97.84754,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13332668601",
+    "lat": 30.559468,
+    "lon": -97.754321,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13332768701",
+    "lat": 30.593434,
+    "lon": -97.860938,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13337309805",
+    "lat": 30.365754,
+    "lon": -97.740417,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13337309806",
+    "lat": 30.363597,
+    "lon": -97.739964,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13337309807",
+    "lat": 30.364935,
+    "lon": -97.739512,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13342918801",
+    "lat": 30.400414,
+    "lon": -97.725839,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13342926801",
+    "lat": 30.400414,
+    "lon": -97.725839,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13347208401",
+    "lat": 30.413495,
+    "lon": -97.8493,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13347208402",
+    "lat": 30.390042,
+    "lon": -97.848116,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13347209801",
+    "lat": 30.362434,
+    "lon": -97.851,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13351836202",
+    "lat": 30.426259,
+    "lon": -97.754941,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13351840217",
+    "lat": 30.426258,
+    "lon": -97.75494,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13354188014",
+    "lat": 30.394316,
+    "lon": -97.726695,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13354188015",
+    "lat": 30.393508,
+    "lon": -97.727665,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13354188016",
+    "lat": 30.394037,
+    "lon": -97.726554,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13354252269",
+    "lat": 30.3931,
+    "lon": -97.726569,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13355106501",
+    "lat": 30.527659,
+    "lon": -97.811093,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13356576762",
+    "lat": 30.583645,
+    "lon": -97.876337,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13356576763",
+    "lat": 30.599875,
+    "lon": -97.888581,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13372405202",
+    "lat": 30.50087,
+    "lon": -97.816541,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13382280442",
+    "lat": 30.560128,
+    "lon": -97.845423,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13414637001",
+    "lat": 30.538469,
+    "lon": -97.774995,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13416506501",
+    "lat": 30.399965,
+    "lon": -97.733026,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13416954919",
+    "lat": 30.531619,
+    "lon": -97.789957,
+    "source": "deflock",
+    "verified": false,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13427413001",
+    "lat": 30.314875,
+    "lon": -97.952544,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13427413201",
+    "lat": 30.314825,
+    "lon": -97.952378,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13427602501",
+    "lat": 30.307089,
+    "lon": -97.709615,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13440531301",
+    "lat": 30.519022,
+    "lon": -97.701119,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13444336701",
+    "lat": 30.392495,
+    "lon": -97.731638,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13464601204",
+    "lat": 30.53241,
+    "lon": -97.786877,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13464992702",
+    "lat": 30.547611,
+    "lon": -97.793518,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13464997201",
+    "lat": 30.547889,
+    "lon": -97.793674,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13473083577",
+    "lat": 30.392615,
+    "lon": -97.73229,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13482666101",
+    "lat": 30.318321,
+    "lon": -97.994493,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13482930301",
+    "lat": 30.401258,
+    "lon": -97.724792,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13512530601",
+    "lat": 30.530996,
+    "lon": -97.722942,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13522691797",
+    "lat": 30.326114,
+    "lon": -97.726043,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13523230001",
+    "lat": 30.309733,
+    "lon": -97.771617,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13525310801",
+    "lat": 30.322494,
+    "lon": -97.719786,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13525352001",
+    "lat": 30.32331,
+    "lon": -97.723791,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13525352201",
+    "lat": 30.325694,
+    "lon": -97.726258,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13532745505",
+    "lat": 30.478013,
+    "lon": -97.797646,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13535315101",
+    "lat": 30.300404,
+    "lon": -97.758939,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13535619001",
+    "lat": 30.300799,
+    "lon": -97.757811,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13539223901",
+    "lat": 30.301857,
+    "lon": -97.758903,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13543894001",
+    "lat": 30.351545,
+    "lon": -97.748706,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13546582301",
+    "lat": 30.331228,
+    "lon": -97.734063,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13556676502",
+    "lat": 30.334017,
+    "lon": -97.738294,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13563232701",
+    "lat": 30.337212,
+    "lon": -97.700552,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13563233401",
+    "lat": 30.336307,
+    "lon": -97.701266,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13565644901",
+    "lat": 30.427014,
+    "lon": -97.755886,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13565645501",
+    "lat": 30.425237,
+    "lon": -97.75488,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13565645701",
+    "lat": 30.424833,
+    "lon": -97.755657,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13568386301",
+    "lat": 30.307914,
+    "lon": -97.758334,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13568401701",
+    "lat": 30.334449,
+    "lon": -97.754605,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13574322701",
+    "lat": 30.313133,
+    "lon": -97.771752,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13575035601",
+    "lat": 30.402376,
+    "lon": -97.702344,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13580282002",
+    "lat": 30.401446,
+    "lon": -97.725954,
+    "source": "deflock",
+    "verified": true,
+    "address": "Simon Property Group"
+  },
+  {
+    "id": "deflock-13580521502",
+    "lat": 30.384747,
+    "lon": -97.952804,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13585577802",
+    "lat": 30.321369,
+    "lon": -97.978676,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13599466201",
+    "lat": 30.308141,
+    "lon": -97.75638,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13603234501",
+    "lat": 30.319291,
+    "lon": -97.993439,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13608180101",
+    "lat": 30.334666,
+    "lon": -97.748717,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13608212101",
+    "lat": 30.334572,
+    "lon": -97.750926,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13608240801",
+    "lat": 30.335046,
+    "lon": -97.740377,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13608260001",
+    "lat": 30.332113,
+    "lon": -97.73396,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13608264901",
+    "lat": 30.327931,
+    "lon": -97.727449,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13621570601",
+    "lat": 30.319544,
+    "lon": -97.99342,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13650859101",
+    "lat": 30.398085,
+    "lon": -97.745825,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13652434664",
+    "lat": 30.465679,
+    "lon": -97.700544,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13663752001",
+    "lat": 30.507483,
+    "lon": -97.776374,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13685946902",
+    "lat": 30.413157,
+    "lon": -97.850787,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13695866801",
+    "lat": 30.380865,
+    "lon": -97.94464,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13695972101",
+    "lat": 30.378788,
+    "lon": -97.945838,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13716079070",
+    "lat": 30.472175,
+    "lon": -97.703052,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13717368063",
+    "lat": 30.385113,
+    "lon": -97.73207,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13717368064",
+    "lat": 30.385114,
+    "lon": -97.732068,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13717383086",
+    "lat": 30.385999,
+    "lon": -97.72529,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13717383087",
+    "lat": 30.386006,
+    "lon": -97.72529,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13717445607",
+    "lat": 30.391741,
+    "lon": -97.72611,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13717445608",
+    "lat": 30.391739,
+    "lon": -97.726108,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13721193445",
+    "lat": 30.393195,
+    "lon": -97.730538,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13736053701",
+    "lat": 30.494652,
+    "lon": -97.810949,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13759665527",
+    "lat": 30.52793,
+    "lon": -97.885155,
+    "source": "deflock",
+    "verified": true,
+    "address": "Leander Police Department"
+  },
+  {
+    "id": "deflock-13759665528",
+    "lat": 30.527877,
+    "lon": -97.886499,
+    "source": "deflock",
+    "verified": true,
+    "address": "Leander Police Department"
+  },
+  {
+    "id": "deflock-13762199401",
+    "lat": 30.327329,
+    "lon": -97.964016,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13765584912",
+    "lat": 30.494169,
+    "lon": -97.724942,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13768513001",
+    "lat": 30.31991,
+    "lon": -97.955071,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13768513401",
+    "lat": 30.318498,
+    "lon": -97.95411,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13768515801",
+    "lat": 30.317895,
+    "lon": -97.954474,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13770665301",
+    "lat": 30.327311,
+    "lon": -97.96489,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-11178198573",
+    "lat": 30.467891,
+    "lon": -97.585312,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-11178316477",
+    "lat": 30.482156,
+    "lon": -97.614643,
+    "source": "deflock",
+    "verified": true,
+    "address": "Pflugerville PD"
+  },
+  {
+    "id": "deflock-12535062779",
+    "lat": 30.56042,
+    "lon": -97.686519,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12535077316",
+    "lat": 30.568586,
+    "lon": -97.686801,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12535080957",
+    "lat": 30.559884,
+    "lon": -97.689408,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12570065352",
+    "lat": 30.36505,
+    "lon": -97.650572,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-12570065353",
+    "lat": 30.364922,
+    "lon": -97.650541,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13073445501",
+    "lat": 30.568518,
+    "lon": -97.691895,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13074782101",
+    "lat": 30.477422,
+    "lon": -97.643186,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13074786601",
+    "lat": 30.486634,
+    "lon": -97.65044,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13074795401",
+    "lat": 30.486333,
+    "lon": -97.650193,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13074830301",
+    "lat": 30.496368,
+    "lon": -97.657162,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13108257637",
+    "lat": 30.415761,
+    "lon": -97.655233,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142622",
+    "lat": 30.367108,
+    "lon": -97.649145,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142623",
+    "lat": 30.37206,
+    "lon": -97.648126,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142624",
+    "lat": 30.3723,
+    "lon": -97.648128,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142625",
+    "lat": 30.374475,
+    "lon": -97.661156,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142626",
+    "lat": 30.374481,
+    "lon": -97.66102,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142627",
+    "lat": 30.373618,
+    "lon": -97.662891,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113142628",
+    "lat": 30.373569,
+    "lon": -97.662697,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13113460263",
+    "lat": 30.465007,
+    "lon": -97.59821,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13113461554",
+    "lat": 30.465776,
+    "lon": -97.599023,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13143145922",
+    "lat": 30.452262,
+    "lon": -97.604334,
+    "source": "deflock",
+    "verified": true,
+    "address": "Pflugerville Police Department"
+  },
+  {
+    "id": "deflock-13152944257",
+    "lat": 30.456108,
+    "lon": -97.60703,
+    "source": "deflock",
+    "verified": true,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-13163737921",
+    "lat": 30.461323,
+    "lon": -97.598846,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13191137498",
+    "lat": 30.349476,
+    "lon": -97.555821,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13191137499",
+    "lat": 30.348482,
+    "lon": -97.556055,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13191137500",
+    "lat": 30.348515,
+    "lon": -97.539186,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13191163101",
+    "lat": 30.349894,
+    "lon": -97.538063,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13203189184",
+    "lat": 30.474079,
+    "lon": -97.596034,
+    "source": "deflock",
+    "verified": true,
+    "address": "Flock Safety"
+  },
+  {
+    "id": "deflock-13204344127",
+    "lat": 30.556155,
+    "lon": -97.471746,
+    "source": "deflock",
+    "verified": true,
+    "address": "City of Taylor, TX"
+  },
+  {
+    "id": "deflock-13204377433",
+    "lat": 30.517237,
+    "lon": -97.655601,
+    "source": "deflock",
+    "verified": true,
+    "address": "Round Rock Police Department"
+  },
+  {
+    "id": "deflock-13204382425",
+    "lat": 30.517461,
+    "lon": -97.655428,
+    "source": "deflock",
+    "verified": true,
+    "address": "Round Rock Police Department"
+  },
+  {
+    "id": "deflock-13231959853",
+    "lat": 30.538706,
+    "lon": -97.669532,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13265903801",
+    "lat": 30.352511,
+    "lon": -97.41166,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13265927301",
+    "lat": 30.360224,
+    "lon": -97.406749,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13267571189",
+    "lat": 30.536211,
+    "lon": -97.403667,
+    "source": "deflock",
+    "verified": true,
+    "address": "City of Taylor, TX"
+  },
+  {
+    "id": "deflock-13267571190",
+    "lat": 30.536241,
+    "lon": -97.403603,
+    "source": "deflock",
+    "verified": true,
+    "address": "City of Taylor, TX"
+  },
+  {
+    "id": "deflock-13267571191",
+    "lat": 30.555654,
+    "lon": -97.472475,
+    "source": "deflock",
+    "verified": true,
+    "address": "City of Taylor, TX"
+  },
+  {
+    "id": "deflock-13272546901",
+    "lat": 30.415886,
+    "lon": -97.662776,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13272546902",
+    "lat": 30.415484,
+    "lon": -97.655942,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13272547701",
+    "lat": 30.417197,
+    "lon": -97.662084,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13273228471",
+    "lat": 30.466794,
+    "lon": -97.595676,
+    "source": "deflock",
+    "verified": true,
+    "address": "Flock"
+  },
+  {
+    "id": "deflock-13273288562",
+    "lat": 30.456165,
+    "lon": -97.602801,
+    "source": "deflock",
+    "verified": true,
+    "address": "Pflugerville Police Department"
+  },
+  {
+    "id": "deflock-13273288564",
+    "lat": 30.467199,
+    "lon": -97.601572,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13273310706",
+    "lat": 30.463454,
+    "lon": -97.598162,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13273312581",
+    "lat": 30.470692,
+    "lon": -97.594426,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13273313167",
+    "lat": 30.46921,
+    "lon": -97.594917,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13276458365",
+    "lat": 30.445837,
+    "lon": -97.633862,
+    "source": "deflock",
+    "verified": false,
+    "address": "Pflugerville ISD"
+  },
+  {
+    "id": "deflock-13278506841",
+    "lat": 30.465946,
+    "lon": -97.595299,
+    "source": "deflock",
+    "verified": true,
+    "address": "Pflugerville PD"
+  },
+  {
+    "id": "deflock-13279003638",
+    "lat": 30.543302,
+    "lon": -97.55942,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13279015514",
+    "lat": 30.542408,
+    "lon": -97.559527,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13279060380",
+    "lat": 30.542128,
+    "lon": -97.557309,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13292014701",
+    "lat": 30.428456,
+    "lon": -97.644759,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13292443501",
+    "lat": 30.428772,
+    "lon": -97.64116,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13292443502",
+    "lat": 30.414997,
+    "lon": -97.635246,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13292526801",
+    "lat": 30.415108,
+    "lon": -97.635105,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13292927302",
+    "lat": 30.420158,
+    "lon": -97.644442,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293390601",
+    "lat": 30.428432,
+    "lon": -97.640973,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293393701",
+    "lat": 30.424937,
+    "lon": -97.626136,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293401901",
+    "lat": 30.429619,
+    "lon": -97.637659,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293425301",
+    "lat": 30.429231,
+    "lon": -97.64207,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293425302",
+    "lat": 30.420007,
+    "lon": -97.644606,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293425303",
+    "lat": 30.429786,
+    "lon": -97.637862,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13293425304",
+    "lat": 30.436419,
+    "lon": -97.640488,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13295761097",
+    "lat": 30.473911,
+    "lon": -97.596247,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13301029502",
+    "lat": 30.484379,
+    "lon": -97.674381,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13301039604",
+    "lat": 30.488315,
+    "lon": -97.678475,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302422201",
+    "lat": 30.420049,
+    "lon": -97.644962,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302444901",
+    "lat": 30.410144,
+    "lon": -97.648389,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302453501",
+    "lat": 30.418765,
+    "lon": -97.660083,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302454201",
+    "lat": 30.418021,
+    "lon": -97.658885,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302454202",
+    "lat": 30.416724,
+    "lon": -97.657048,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302457201",
+    "lat": 30.417333,
+    "lon": -97.657884,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13302513101",
+    "lat": 30.497704,
+    "lon": -97.679293,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13305434601",
+    "lat": 30.501038,
+    "lon": -97.684517,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13305437701",
+    "lat": 30.495746,
+    "lon": -97.678381,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13305437901",
+    "lat": 30.484988,
+    "lon": -97.672346,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13312285601",
+    "lat": 30.485499,
+    "lon": -97.676527,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13312286201",
+    "lat": 30.484949,
+    "lon": -97.678524,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13313865701",
+    "lat": 30.432738,
+    "lon": -97.652433,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13320491201",
+    "lat": 30.419505,
+    "lon": -97.579178,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13325113502",
+    "lat": 30.42182,
+    "lon": -97.670746,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13325115801",
+    "lat": 30.423309,
+    "lon": -97.669336,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13325116601",
+    "lat": 30.423039,
+    "lon": -97.668777,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13325118201",
+    "lat": 30.422807,
+    "lon": -97.670825,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13330638301",
+    "lat": 30.421323,
+    "lon": -97.669796,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13334641901",
+    "lat": 30.481876,
+    "lon": -97.667873,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13334729503",
+    "lat": 30.484151,
+    "lon": -97.672067,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13334742401",
+    "lat": 30.414569,
+    "lon": -97.675279,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13334743101",
+    "lat": 30.414351,
+    "lon": -97.674163,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13334743102",
+    "lat": 30.415975,
+    "lon": -97.673799,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13334747301",
+    "lat": 30.416218,
+    "lon": -97.674752,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13337309808",
+    "lat": 30.347689,
+    "lon": -97.672529,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13337309809",
+    "lat": 30.347626,
+    "lon": -97.672582,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13337309810",
+    "lat": 30.346511,
+    "lon": -97.673282,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13339734436",
+    "lat": 30.334839,
+    "lon": -97.550456,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13341353901",
+    "lat": 30.431758,
+    "lon": -97.603814,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13351661401",
+    "lat": 30.507812,
+    "lon": -97.54821,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13352134281",
+    "lat": 30.466637,
+    "lon": -97.600126,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13352145233",
+    "lat": 30.464468,
+    "lon": -97.598406,
+    "source": "deflock",
+    "verified": true,
+    "address": "The Home Depot"
+  },
+  {
+    "id": "deflock-13357595060",
+    "lat": 30.473964,
+    "lon": -97.596049,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13357608532",
+    "lat": 30.46953,
+    "lon": -97.595601,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13357896701",
+    "lat": 30.559006,
+    "lon": -97.688464,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13359730002",
+    "lat": 30.483858,
+    "lon": -97.677711,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13359735801",
+    "lat": 30.483666,
+    "lon": -97.676784,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360425903",
+    "lat": 30.412103,
+    "lon": -97.634659,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360435901",
+    "lat": 30.412209,
+    "lon": -97.634424,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360436701",
+    "lat": 30.415115,
+    "lon": -97.636928,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360448201",
+    "lat": 30.418014,
+    "lon": -97.631323,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360448601",
+    "lat": 30.417945,
+    "lon": -97.630909,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360452201",
+    "lat": 30.420226,
+    "lon": -97.629632,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360452202",
+    "lat": 30.420323,
+    "lon": -97.62947,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360455101",
+    "lat": 30.423454,
+    "lon": -97.631854,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360455102",
+    "lat": 30.423479,
+    "lon": -97.631926,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360455401",
+    "lat": 30.423479,
+    "lon": -97.631926,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13360456002",
+    "lat": 30.425808,
+    "lon": -97.634167,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13409294201",
+    "lat": 30.44856,
+    "lon": -97.655762,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13411155903",
+    "lat": 30.431758,
+    "lon": -97.603814,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13411165401",
+    "lat": 30.42129,
+    "lon": -97.669731,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13411165402",
+    "lat": 30.425775,
+    "lon": -97.634126,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13411165601",
+    "lat": 30.415163,
+    "lon": -97.636979,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13419391380",
+    "lat": 30.489147,
+    "lon": -97.610258,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13420432763",
+    "lat": 30.585044,
+    "lon": -97.655562,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13420432765",
+    "lat": 30.562812,
+    "lon": -97.656124,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13420432766",
+    "lat": 30.562667,
+    "lon": -97.655963,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13422151201",
+    "lat": 30.482718,
+    "lon": -97.693026,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13422187401",
+    "lat": 30.494568,
+    "lon": -97.671887,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13422187701",
+    "lat": 30.494944,
+    "lon": -97.671048,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13427214201",
+    "lat": 30.404949,
+    "lon": -97.641487,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13427214501",
+    "lat": 30.405002,
+    "lon": -97.641614,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13430873370",
+    "lat": 30.451372,
+    "lon": -97.605912,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13430923647",
+    "lat": 30.451017,
+    "lon": -97.605661,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13433512901",
+    "lat": 30.408039,
+    "lon": -97.637348,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13433513201",
+    "lat": 30.407918,
+    "lon": -97.637461,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13433514701",
+    "lat": 30.408088,
+    "lon": -97.640495,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13433518001",
+    "lat": 30.410431,
+    "lon": -97.64823,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13434584201",
+    "lat": 30.412189,
+    "lon": -97.634391,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13434584202",
+    "lat": 30.41791,
+    "lon": -97.630933,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13434627601",
+    "lat": 30.420307,
+    "lon": -97.629445,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13436463601",
+    "lat": 30.408064,
+    "lon": -97.640634,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13440533101",
+    "lat": 30.46324,
+    "lon": -97.668051,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13442774301",
+    "lat": 30.453264,
+    "lon": -97.636674,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13442774401",
+    "lat": 30.454066,
+    "lon": -97.63651,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13446689801",
+    "lat": 30.456367,
+    "lon": -97.668002,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13448727401",
+    "lat": 30.569187,
+    "lon": -97.68792,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13448754101",
+    "lat": 30.517466,
+    "lon": -97.655427,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13448801533",
+    "lat": 30.49662,
+    "lon": -97.656386,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13448841101",
+    "lat": 30.509091,
+    "lon": -97.681621,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13448844801",
+    "lat": 30.502574,
+    "lon": -97.676459,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13449346865",
+    "lat": 30.346511,
+    "lon": -97.539992,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13449501502",
+    "lat": 30.547022,
+    "lon": -97.634289,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13449501901",
+    "lat": 30.5468,
+    "lon": -97.614619,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13449514001",
+    "lat": 30.525109,
+    "lon": -97.633537,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13449519201",
+    "lat": 30.53905,
+    "lon": -97.667425,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13450865501",
+    "lat": 30.447528,
+    "lon": -97.652121,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13451237101",
+    "lat": 30.497395,
+    "lon": -97.68824,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13451572501",
+    "lat": 30.476158,
+    "lon": -97.66151,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13454736701",
+    "lat": 30.515172,
+    "lon": -97.681818,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13455141701",
+    "lat": 30.533189,
+    "lon": -97.675417,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13456511542",
+    "lat": 30.527994,
+    "lon": -97.691112,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13462555601",
+    "lat": 30.501222,
+    "lon": -97.645512,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13464603301",
+    "lat": 30.489205,
+    "lon": -97.67591,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13469347801",
+    "lat": 30.479186,
+    "lon": -97.682918,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13469348501",
+    "lat": 30.498644,
+    "lon": -97.681706,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13472222901",
+    "lat": 30.541587,
+    "lon": -97.557832,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13481014926",
+    "lat": 30.490275,
+    "lon": -97.629653,
+    "source": "deflock",
+    "verified": true,
+    "address": "Round Rock Police Department"
+  },
+  {
+    "id": "deflock-13505256702",
+    "lat": 30.496182,
+    "lon": -97.676649,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13517880873",
+    "lat": 30.456804,
+    "lon": -97.657374,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13523025401",
+    "lat": 30.564992,
+    "lon": -97.691712,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13528159901",
+    "lat": 30.532203,
+    "lon": -97.678747,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13535271601",
+    "lat": 30.408313,
+    "lon": -97.678044,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13535275701",
+    "lat": 30.411917,
+    "lon": -97.687375,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13541483440",
+    "lat": 30.520051,
+    "lon": -97.6135,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13541921201",
+    "lat": 30.440911,
+    "lon": -97.634357,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13542079702",
+    "lat": 30.386533,
+    "lon": -97.648168,
+    "source": "deflock",
+    "verified": true,
+    "address": "Texas Department of Public Safety"
+  },
+  {
+    "id": "deflock-13544872702",
+    "lat": 30.376786,
+    "lon": -97.658241,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13544887401",
+    "lat": 30.376629,
+    "lon": -97.657653,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13544888301",
+    "lat": 30.366978,
+    "lon": -97.648489,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13544890801",
+    "lat": 30.366275,
+    "lon": -97.652785,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13544901401",
+    "lat": 30.36139,
+    "lon": -97.654898,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13546672953",
+    "lat": 30.542784,
+    "lon": -97.557157,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13547444001",
+    "lat": 30.402771,
+    "lon": -97.656873,
+    "source": "deflock",
+    "verified": true,
+    "address": "Texas Department of Public Safety"
+  },
+  {
+    "id": "deflock-13547449602",
+    "lat": 30.387429,
+    "lon": -97.648773,
+    "source": "deflock",
+    "verified": true,
+    "address": "Texas Department of Public Safety"
+  },
+  {
+    "id": "deflock-13551194542",
+    "lat": 30.488874,
+    "lon": -97.623848,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13556574497",
+    "lat": 30.407454,
+    "lon": -97.67848,
+    "source": "deflock",
+    "verified": true,
+    "address": "Texas Department of Public Safety"
+  },
+  {
+    "id": "deflock-13563171975",
+    "lat": 30.44764,
+    "lon": -97.636572,
+    "source": "deflock",
+    "verified": true,
+    "address": "Pflugerville ISD"
+  },
+  {
+    "id": "deflock-13571621601",
+    "lat": 30.341922,
+    "lon": -97.563785,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13575018001",
+    "lat": 30.483656,
+    "lon": -97.676877,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13575018201",
+    "lat": 30.483846,
+    "lon": -97.677739,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13575018301",
+    "lat": 30.484031,
+    "lon": -97.678467,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13575018401",
+    "lat": 30.483622,
+    "lon": -97.678417,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13575024978",
+    "lat": 30.353281,
+    "lon": -97.593699,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13585845101",
+    "lat": 30.509047,
+    "lon": -97.682416,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13588795601",
+    "lat": 30.545105,
+    "lon": -97.633034,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13591025401",
+    "lat": 30.530725,
+    "lon": -97.636335,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13599699433",
+    "lat": 30.542073,
+    "lon": -97.563343,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13599722852",
+    "lat": 30.541875,
+    "lon": -97.562416,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13604165005",
+    "lat": 30.499967,
+    "lon": -97.677216,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13604165501",
+    "lat": 30.498932,
+    "lon": -97.678654,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13613153401",
+    "lat": 30.520145,
+    "lon": -97.683926,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13623075301",
+    "lat": 30.548026,
+    "lon": -97.408915,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13628608201",
+    "lat": 30.566335,
+    "lon": -97.688695,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13631429501",
+    "lat": 30.492569,
+    "lon": -97.58175,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13643727901",
+    "lat": 30.446616,
+    "lon": -97.634702,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13657142401",
+    "lat": 30.423387,
+    "lon": -97.658344,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13663119001",
+    "lat": 30.543765,
+    "lon": -97.546273,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13663573301",
+    "lat": 30.542755,
+    "lon": -97.5619,
+    "source": "deflock",
+    "verified": true,
+    "address": "Lowe's"
+  },
+  {
+    "id": "deflock-13665739001",
+    "lat": 30.584312,
+    "lon": -97.614991,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13665928401",
+    "lat": 30.51828,
+    "lon": -97.667724,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13675242301",
+    "lat": 30.448266,
+    "lon": -97.631464,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13675247301",
+    "lat": 30.413743,
+    "lon": -97.658671,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13675248201",
+    "lat": 30.414122,
+    "lon": -97.659226,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13680908320",
+    "lat": 30.359651,
+    "lon": -97.562559,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13691458301",
+    "lat": 30.539257,
+    "lon": -97.567263,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13691522201",
+    "lat": 30.547658,
+    "lon": -97.520875,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13691522601",
+    "lat": 30.566869,
+    "lon": -97.439087,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13696432601",
+    "lat": 30.352538,
+    "lon": -97.421827,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13707316701",
+    "lat": 30.413742,
+    "lon": -97.658569,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13707317301",
+    "lat": 30.414182,
+    "lon": -97.659245,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13717433101",
+    "lat": 30.518363,
+    "lon": -97.571543,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13722162890",
+    "lat": 30.351077,
+    "lon": -97.589771,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13728206801",
+    "lat": 30.41435,
+    "lon": -97.693141,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13728302702",
+    "lat": 30.464343,
+    "lon": -97.591221,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13728304301",
+    "lat": 30.46486,
+    "lon": -97.590862,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13739107201",
+    "lat": 30.522594,
+    "lon": -97.545717,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13753809101",
+    "lat": 30.558408,
+    "lon": -97.56919,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13757341701",
+    "lat": 30.531933,
+    "lon": -97.614689,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13757991501",
+    "lat": 30.3682,
+    "lon": -97.612809,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13757997501",
+    "lat": 30.368842,
+    "lon": -97.613764,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13770505501",
+    "lat": 30.368912,
+    "lon": -97.423105,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13770616001",
+    "lat": 30.51935,
+    "lon": -97.655469,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13775144301",
+    "lat": 30.363363,
+    "lon": -97.400633,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13775144701",
+    "lat": 30.36503,
+    "lon": -97.404081,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13776056601",
+    "lat": 30.431418,
+    "lon": -97.568253,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13776057601",
+    "lat": 30.430061,
+    "lon": -97.565296,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13776283501",
+    "lat": 30.517472,
+    "lon": -97.690748,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13777277001",
+    "lat": 30.517496,
+    "lon": -97.690728,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13785678002",
+    "lat": 30.497227,
+    "lon": -97.613402,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13787752902",
+    "lat": 30.49038,
+    "lon": -97.663025,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13788338143",
+    "lat": 30.4813,
+    "lon": -97.681998,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13799847001",
+    "lat": 30.559726,
+    "lon": -97.686204,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13832165201",
+    "lat": 30.351897,
+    "lon": -97.409485,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13832165202",
+    "lat": 30.351951,
+    "lon": -97.421849,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13840682131",
+    "lat": 30.470402,
+    "lon": -97.596596,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-13852444901",
+    "lat": 30.447344,
+    "lon": -97.535252,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13854603501",
+    "lat": 30.44293,
+    "lon": -97.631209,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13859119101",
+    "lat": 30.536626,
+    "lon": -97.57504,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13874544602",
+    "lat": 30.503127,
+    "lon": -97.648299,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13878641401",
+    "lat": 30.536647,
+    "lon": -97.574318,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13889993601",
+    "lat": 30.508624,
+    "lon": -97.678878,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13894901169",
+    "lat": 30.576697,
+    "lon": -97.545826,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13894908204",
+    "lat": 30.542542,
+    "lon": -97.6182,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13898045801",
+    "lat": 30.500184,
+    "lon": -97.576803,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13900163201",
+    "lat": 30.333513,
+    "lon": -97.559358,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13947703601",
+    "lat": 30.540437,
+    "lon": -97.693147,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13959092422",
+    "lat": 30.331975,
+    "lon": -97.559998,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13968914201",
+    "lat": 30.481549,
+    "lon": -97.663756,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13975215101",
+    "lat": 30.568032,
+    "lon": -97.480111,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-13989203901",
+    "lat": 30.542263,
+    "lon": -97.56188,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14004943201",
+    "lat": 30.559504,
+    "lon": -97.679433,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14005178003",
+    "lat": 30.563668,
+    "lon": -97.657811,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14005183501",
+    "lat": 30.563669,
+    "lon": -97.657811,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14005294827",
+    "lat": 30.465139,
+    "lon": -97.62525,
+    "source": "deflock",
+    "verified": false
+  },
+  {
+    "id": "deflock-14005774104",
+    "lat": 30.580459,
+    "lon": -97.612927,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14006836801",
+    "lat": 30.577245,
+    "lon": -97.611853,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14018330397",
+    "lat": 30.456513,
+    "lon": -97.669079,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14018337364",
+    "lat": 30.45725,
+    "lon": -97.668605,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14018345206",
+    "lat": 30.456306,
+    "lon": -97.668656,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14025196401",
+    "lat": 30.562079,
+    "lon": -97.599964,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14041641802",
+    "lat": 30.495978,
+    "lon": -97.655646,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14044953101",
+    "lat": 30.442123,
+    "lon": -97.533258,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14052034801",
+    "lat": 30.420955,
+    "lon": -97.656893,
+    "source": "deflock",
+    "verified": true
+  },
+  {
+    "id": "deflock-14055181301",
+    "lat": 30.53792,
+    "lon": -97.693582,
+    "source": "deflock",
+    "verified": true
+  }
+]

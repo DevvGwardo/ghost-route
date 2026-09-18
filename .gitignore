@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+runs/
+*.log
+.DS_Store
+# Vendored maplibre worker (rebuilt by postinstall — see scripts/copy-maplibre-worker.mjs)
+client/public/gr-map-worker.mjs
+client/public/gr-map-shared.mjs
