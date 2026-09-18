@@ -4,7 +4,6 @@ import MapView, { type BBox, type RecenterSignal } from './components/MapView';
 import DirectionsCard from './components/DirectionsCard';
 import RouteSheet from './components/RouteSheet';
 import { ApiError, getCameras, postRoute } from './lib/api';
-import type { RouteRequest, RouteResponse } from './lib/api';
 import { TYPESAFE_KEY_STORAGE } from './components/KeySettings';
 import './app.css';
 
@@ -112,14 +111,8 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      // lib/api.ts may not accept a second arg yet; the cast keeps this
-      // compiling either way and JS ignores extra args at runtime.
-      type PostRouteWithKey = (
-        req: RouteRequest,
-        opts?: { typesafeKey?: string },
-      ) => Promise<RouteResponse>;
       const key = typesafeKey.trim();
-      const res = await (postRoute as PostRouteWithKey)(
+      const res = await postRoute(
         { origin, destination, avoidFlock, bufferMeters },
         key ? { typesafeKey: key } : undefined,
       );

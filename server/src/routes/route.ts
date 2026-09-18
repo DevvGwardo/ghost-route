@@ -47,8 +47,7 @@ router.post('/', async (req, res) => {
   }
 
   let baseRoutes: any[];
-  // BYOK: per-request user key; never log it. Backend resolveKey() falls back
-  // to TYPESAFE_API_KEY when absent. Cast: backend to extend opts with apiKey.
+  // BYOK: per-request user key (header > env > none); never log it.
   const headerVal = req.header('x-typesafe-key');
   const apiKey = (Array.isArray(headerVal) ? headerVal[0] : headerVal)?.trim() || undefined;
   try {
@@ -127,7 +126,7 @@ router.post('/', async (req, res) => {
       }));
     }
 
-    jev = await rankRoutes(scored, { apiKey } as any);
+    jev = await rankRoutes(scored, { apiKey });
   } catch {
     res.status(500).json({ error: "route-scoring-failed" });
     return;
@@ -199,7 +198,7 @@ router.post('/', async (req, res) => {
           exposureCount: r?.exposureCount ?? 0,
           distanceM: r?.distanceM ?? 0,
         })),
-        { apiKey } as any,
+        { apiKey },
       )) ?? {};
   } catch {
     jevExposureById = {};

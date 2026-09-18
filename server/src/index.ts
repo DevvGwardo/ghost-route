@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import { fileURLToPath } from "node:url";
-import { jevMode, confidenceThreshold } from "./jev.js";
 import { healthPayload } from "./routes/system.js";
 import { apiLimiter, routeLimiter, noKeyLeak } from "./security.js";
 
