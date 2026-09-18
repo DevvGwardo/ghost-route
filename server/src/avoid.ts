@@ -112,29 +112,3 @@ export function perpOffsetDetour(
     lon: midPt.lon + ox / (EARTH_M * DEG * Math.cos(midPt.lat * DEG)),
   };
 }
-
-const DETOUR_OFFSET_M = 1000;
-
-export async function buildDetours(
-  origin: LatLon,
-  dest: LatLon,
-  baseRoutes: RouteInput[],
-  fetchRoutes: (o: LatLon, d: LatLon, via?: LatLon) => Promise<RouteInput[]>,
-): Promise<RouteInput[]> {
-  if (baseRoutes.length === 0) return [];
-  const best = [...baseRoutes].sort((a, b) => a.distanceM - b.distanceM)[0];
-  const out: RouteInput[] = [];
-  for (const sign of [1, -1]) {
-    try {
-      const via = perpOffsetDetour(origin, dest, best.coordinates, sign * DETOUR_OFFSET_M);
-      const extra = await fetchRoutes(origin, dest, via);
-      for (const r of extra ?? []) {
-        if (out.length < 2) out.push(r);
-      }
-      if (out.length >= 2) break;
-    } catch {
-      // Swallow fetch errors → caller re-scores whatever it has.
-    }
-  }
-  return out.slice(0, 2);
-}

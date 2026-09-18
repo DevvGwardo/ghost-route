@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { camerasInBbox, addCamera } from '../store.js';
+import { camerasInBboxPage, addCamera } from '../store.js';
 import { cameraWriteLimiter } from '../security.js';
 
 const router = Router();
 
-const MAX_LIMIT = 2000;
+const MAX_LIMIT = 5000;
 const DEFAULT_LIMIT = 500;
 
 function isFiniteNum(n: unknown): n is number {
@@ -44,11 +44,18 @@ router.get('/', (req, res) => {
       res.status(400).json({ error: 'limit-invalid' });
       return;
     }
+    // Deterministic cap: clamp oversized limits to MAX_LIMIT (5000),
+    // never 400 — US-wide queries stay servable.
     limit = Math.min(parsed, MAX_LIMIT);
   }
 
-  const cameras = camerasInBbox(minLon, minLat, maxLon, maxLat, limit);
-  res.json({ cameras });
+  // Additive v1.1: `truncated`/`total` document decimation; `cameras` shape unchanged.
+  try {
+    const { cameras, total, truncated } = camerasInBboxPage(minLon, minLat, maxLon, maxLat, limit);
+    res.json({ cameras, truncated, total });
+  } catch {
+    res.status(400).json({ error: 'bbox-invalid' });
+  }
 });
 
 // POST / { lat, lon, address? }
@@ -61,7 +68,7 @@ router.post('/', cameraWriteLimiter, (req, res) => {
     res.status(400).json({ error: 'coordinates-invalid' });
     return;
   }
-  if (address !== undefined && (typeof address !== 'string' || address.length > 500)) {
+  if (address !== undefined && (typeof address !== 'string' || address.length === 0 || address.length > 500)) {
     res.status(400).json({ error: 'address-invalid' });
     return;
   }

@@ -8,10 +8,12 @@
 //
 // Usage:
 //   node scripts/import-deflock.mjs [--help] [--synthetic]
-//     [--bbox minLon,minLat,maxLon,maxLat] [--limit N]
+//     [--bbox minLon,minLat,maxLon,maxLat] [--metro <name>] [--us] [--list-metros]
+//     [--snapshot] [--limit N] [--delay-ms N]
 //     [--url <overpass-endpoint>] [--out <path>]
 //
 // Defaults target Austin metro, cap 2000 records.
+// --snapshot pulls the hourly US snapshot (140k+ nodes) instead of Overpass.
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -20,6 +22,10 @@ import { fileURLToPath } from "node:url";
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DEFAULT_BBOX = [-98.0, 30.0, -97.4, 30.6]; // minLon,minLat,maxLon,maxLat (Austin metro)
 const DEFAULT_OUT = "server/data/flock-cameras.json";
+// Hourly OSM-ALPR snapshot (US), same upstream as this script's Overpass
+// queries but fetched server-side — the reliable refresh path when Overpass
+// mirrors 429/504. Published by flockhopper3/deflock-data (ODbL).
+const SNAPSHOT_URL = "https://data.dontgetflocked.com/cameras.geojson.gz";
 const MIRRORS = [
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
@@ -27,16 +33,43 @@ const MIRRORS = [
 ];
 const DEFAULT_LIMIT = 2000;
 const REQUEST_TIMEOUT_MS = 70000;
+const DEFAULT_DELAY_MS = 3000; // politeness pause between Overpass calls
+
+// Major-metro bbox presets (minLon,minLat,maxLon,maxLat, ~0.6deg windows).
+// Austin entry matches DEFAULT_BBOX so default behavior is unchanged.
+const METROS = {
+  austin: [-98.0, 30.0, -97.4, 30.6],
+  houston: [-95.8, 29.5, -95.0, 30.1],
+  dallas: [-97.1, 32.5, -96.5, 33.1],
+  "san-antonio": [-98.8, 29.2, -98.2, 29.7],
+  phoenix: [-112.4, 33.2, -111.8, 33.8],
+  "los-angeles": [-118.7, 33.7, -117.9, 34.3],
+  chicago: [-88.0, 41.6, -87.4, 42.2],
+  "new-york": [-74.3, 40.4, -73.6, 40.95],
+  atlanta: [-84.7, 33.5, -84.1, 34.0],
+  miami: [-80.5, 25.6, -79.9, 26.1],
+  seattle: [-122.6, 47.3, -122.0, 47.8],
+  denver: [-105.3, 39.5, -104.7, 40.0],
+  "san-francisco": [-122.7, 37.5, -122.1, 37.95],
+  "washington-dc": [-77.4, 38.7, -76.8, 39.1],
+  boston: [-71.4, 42.1, -70.8, 42.55],
+};
 
 function usage() {
   console.log(`import-deflock.mjs — fetch ALPR cameras (deflock.me upstream: OSM via Overpass) and write ${DEFAULT_OUT}
 
 Options:
   --bbox minLon,minLat,maxLon,maxLat   area to query (default: Austin metro ${DEFAULT_BBOX.join(",")})
-  --limit N                           cap fetched records (default: ${DEFAULT_LIMIT})
+  --metro <name>                      preset area (${Object.keys(METROS).join(", ")})
+  --us                                tile all metro presets (UNION; --bbox/--metro ignored)
+  --snapshot                          pull hourly US snapshot (${SNAPSHOT_URL}) instead of Overpass
+  --list-metros                       print preset names + bboxes and exit
+  --limit N                           cap fetched records PER metro (default: ${DEFAULT_LIMIT})
+  --delay-ms N                        politeness pause between Overpass calls (default: ${DEFAULT_DELAY_MS})
   --url <endpoint>                    Overpass interpreter URL (default: first reachable of ${MIRRORS.length} mirrors)
   --out <path>                        output JSON, repo-relative (default: ${DEFAULT_OUT})
   --synthetic                         skip network; write deterministic Austin TX corridor seed (~64 cams)
+                                      (+ --us: one seed per metro preset; + --metro: seed shifted to that metro)
   --help                              print this help
 
 Record shape: { id, lat, lon, source, address?, verified }
@@ -50,7 +83,12 @@ De-dupe + merge key: lat/lon rounded to 5 decimals. Reruns never duplicate.`);
 function parseArgs(argv) {
   const opts = {
     bbox: DEFAULT_BBOX,
+    bboxSet: false,
+    metro: undefined,
+    us: false,
+    snapshot: false,
     limit: DEFAULT_LIMIT,
+    delayMs: DEFAULT_DELAY_MS,
     url: undefined, // undefined → try MIRRORS in order
     out: DEFAULT_OUT,
     synthetic: false,
@@ -61,12 +99,24 @@ function parseArgs(argv) {
       usage();
       process.exit(0);
     } else if (a === "--synthetic") opts.synthetic = true;
-    else if (a === "--bbox") {
+    else if (a === "--us") opts.us = true;
+    else if (a === "--snapshot") opts.snapshot = true;
+    else if (a === "--list-metros") {
+      for (const [name, bbox] of Object.entries(METROS)) console.log(`${name} ${bbox.join(",")}`);
+      process.exit(0);
+    } else if (a === "--metro") {
+      opts.metro = (argv[++i] ?? "").toLowerCase();
+      if (!METROS[opts.metro]) throw new Error(`--metro must be one of: ${Object.keys(METROS).join(", ")}`);
+    } else if (a === "--bbox") {
       const parts = (argv[++i] ?? "").split(",").map(Number);
       if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) {
         throw new Error("--bbox must be minLon,minLat,maxLon,maxLat (numbers)");
       }
       opts.bbox = parts;
+      opts.bboxSet = true;
+    } else if (a === "--delay-ms") {
+      opts.delayMs = Number(argv[++i]);
+      if (!Number.isInteger(opts.delayMs) || opts.delayMs < 0) throw new Error("--delay-ms must be a non-negative integer");
     } else if (a === "--limit") {
       opts.limit = Number(argv[++i]);
       if (!Number.isInteger(opts.limit) || opts.limit < 1) throw new Error("--limit must be a positive integer");
@@ -92,8 +142,9 @@ function rng(seed) {
 }
 
 // ~64 plausible cameras along major Austin TX corridors.
-function syntheticSeed() {
-  const rand = rng(20260917);
+// dLat/dLon shift the whole seed to another metro center; idPrefix keeps ids unique.
+function syntheticSeed(dLat = 0, dLon = 0, idPrefix = "cam", seed = 20260917) {
+  const rand = rng(seed);
   const spots = [];
   const line = (n, lat0, lon0, lat1, lon1, label, jitter = 0.004) => {
     for (let i = 0; i < n; i++) {
@@ -133,13 +184,35 @@ function syntheticSeed() {
     spots.push({ lat: lat + (rand() - 0.5) * 0.002, lon: lon + (rand() - 0.5) * 0.002, address });
   }
   return spots.map((s, i) => ({
-    id: `cam-${String(i + 1).padStart(3, "0")}`,
-    lat: Number(s.lat.toFixed(6)),
-    lon: Number(s.lon.toFixed(6)),
+    id: `${idPrefix}-${String(i + 1).padStart(3, "0")}`,
+    lat: Number((s.lat + dLat).toFixed(6)),
+    lon: Number((s.lon + dLon).toFixed(6)),
     source: "synthetic",
     ...(s.address ? { address: s.address } : {}),
     verified: false,
   }));
+}
+
+const AUSTIN_CENTER = [30.27, -97.74]; // lat, lon — anchor syntheticSeed() was authored against
+
+function bboxCenter(bbox) {
+  const [minLon, minLat, maxLon, maxLat] = bbox;
+  return [(minLat + maxLat) / 2, (minLon + maxLon) / 2];
+}
+
+// One ~64-cam corridor seed per metro, shifted to that metro's center.
+// Deterministic per metro (seed = base + index) so reruns are stable.
+// Addresses are generic per-metro labels (NOT Austin street names) so the
+// synthetic fallback never misleads: source=synthetic, verified=false.
+function syntheticSeedUS() {
+  const names = Object.keys(METROS);
+  return names.flatMap((name, mi) => {
+    const [cLat, cLon] = bboxCenter(METROS[name]);
+    const prefix = `us-${name.replace(/[^a-z0-9]+/g, "")}`;
+    return syntheticSeed(cLat - AUSTIN_CENTER[0], cLon - AUSTIN_CENTER[1], prefix, 20260917 + mi).map(
+      (rec, i) => ({ ...rec, address: `${name} metro corridor ${i + 1}` }),
+    );
+  });
 }
 
 function addressFromTags(tags = {}) {
@@ -167,13 +240,62 @@ function normalizeOverpass(json) {
     });
 }
 
+function normalizeSnapshot(json) {
+  const feats = Array.isArray(json?.features) ? json.features : [];
+  const seen = new Set();
+  const out = [];
+  for (const f of feats) {
+    const c = f?.geometry?.coordinates;
+    if (!Array.isArray(c)) continue;
+    const lon = Number(c[0]);
+    const lat = Number(c[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
+    const p = f?.properties ?? {};
+    if (p.osmId === undefined || p.osmId === null) continue;
+    const id = `deflock-${p.osmId}`;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const brand = typeof p.brand === "string" && p.brand ? p.brand : undefined;
+    const rec = {
+      id,
+      lat: Number(lat.toFixed(6)),
+      lon: Number(lon.toFixed(6)),
+      source: "deflock",
+      verified: brand === "Flock Safety",
+    };
+    if (brand) rec.brand = brand;
+    if (typeof p.direction === "number" && Number.isFinite(p.direction) && p.direction !== 0)
+      rec.direction = p.direction;
+    out.push(rec);
+  }
+  return out;
+}
+
+async function fetchSnapshot(url = SNAPSHOT_URL) {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "ghost-route/0.1 (OSM ALPR import; local dev)",
+      Accept: "application/geo+json, application/json",
+      Referer: "https://github.com/DevvGwardo/ghost-route",
+    },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  if (!res.ok) throw new Error(`snapshot ${res.status} ${res.statusText}`);
+  return normalizeSnapshot(await res.json());
+}
 async function fetchQuad(url, quad) {
   const [minLon, minLat, maxLon, maxLat] = quad;
   // Overpass bbox order: south,west,north,east.
   const query = `[out:json][timeout:60];node["surveillance:type"="ALPR"](${minLat},${minLon},${maxLat},${maxLon});out;`;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "ghost-route/0.1 (OSM ALPR import; local dev)",
+      Accept: "application/json",
+      Referer: "https://github.com/DevvGwardo/ghost-route",
+    },
     body: "data=" + encodeURIComponent(query),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
@@ -195,7 +317,7 @@ function splitQuads(bbox) {
   ];
 }
 
-async function fetchOverpass(urls, bbox, limit) {
+async function fetchOverpass(urls, bbox, limit, delayMs = DEFAULT_DELAY_MS) {
   const attempts = [];
   let lastErr;
   for (const url of urls) {
@@ -203,7 +325,7 @@ async function fetchOverpass(urls, bbox, limit) {
       const seen = new Map();
       const quads = splitQuads(bbox);
       for (let i = 0; i < quads.length; i++) {
-        if (i > 0) await new Promise((r) => setTimeout(r, 3000)); // be polite: avoid 429s
+        if (i > 0) await new Promise((r) => setTimeout(r, delayMs)); // be polite: avoid 429s
         for (const rec of await fetchQuad(url, quads[i])) seen.set(rec.id, rec);
       }
       const rows = [...seen.values()].slice(0, limit);
@@ -214,6 +336,37 @@ async function fetchOverpass(urls, bbox, limit) {
     }
   }
   throw new Error(`all Overpass mirrors failed: ${attempts.join("; ")}; last: ${lastErr?.message}`);
+}
+
+// --us: fetch each metro preset in turn (politeness delay between metros),
+// merge/dedupe on rounded coord key (same keyOf as single-bbox path).
+// --limit applies PER metro. Returns { rows, attempts }.
+async function fetchOverpassUS(urls, limit, delayMs) {
+  const merged = [];
+  const seenKeys = new Set();
+  const attempts = [];
+  const names = Object.keys(METROS);
+  for (let m = 0; m < names.length; m++) {
+    const name = names[m];
+    if (m > 0) await new Promise((r) => setTimeout(r, delayMs));
+    try {
+      const { rows, mirror, attempts: att } = await fetchOverpass(urls, METROS[name], limit, delayMs);
+      attempts.push(...att.map((a) => `${name}: ${a}`));
+      let added = 0;
+      for (const rec of rows) {
+        const k = keyOf(rec);
+        if (seenKeys.has(k)) continue;
+        seenKeys.add(k);
+        merged.push(rec);
+        added++;
+      }
+      console.log(`metro ${name}: ${rows.length} nodes via ${mirror} (${added} new after dedupe)`);
+    } catch (err) {
+      attempts.push(`${name}: ${err.message}`);
+      console.log(`metro ${name} failed: ${err.message}`);
+    }
+  }
+  return { rows: merged, attempts };
 }
 
 const keyOf = (r) => `${r.lat.toFixed(5)},${r.lon.toFixed(5)}`;
@@ -242,19 +395,75 @@ function readExisting(outPath) {
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   const outPath = resolve(ROOT, opts.out);
+  const activeBbox = opts.us
+    ? null
+    : opts.bboxSet
+      ? opts.bbox // explicit --bbox always wins
+      : opts.metro
+        ? METROS[opts.metro]
+        : opts.bbox; // Austin default, unchanged
   if (opts.synthetic) {
     const existing = readExisting(outPath);
-    const incoming = syntheticSeed();
+    let incoming;
+    let tag;
+    if (opts.us) {
+      incoming = syntheticSeedUS();
+      tag = `synthetic --us (${Object.keys(METROS).length} metros)`;
+    } else if (opts.metro) {
+      const [cLat, cLon] = bboxCenter(METROS[opts.metro]);
+      incoming = syntheticSeed(cLat - AUSTIN_CENTER[0], cLon - AUSTIN_CENTER[1], `syn-${opts.metro.replace(/[^a-z0-9]+/g, "")}`, 20260917).map(
+        (rec, i) => ({ ...rec, address: `${opts.metro} metro corridor ${i + 1}` }),
+      );
+      tag = `synthetic --metro ${opts.metro}`;
+    } else {
+      incoming = syntheticSeed();
+      tag = "synthetic";
+    }
     const merged = mergeRecords(existing, incoming);
     mkdirSync(dirname(outPath), { recursive: true });
     writeFileSync(outPath, JSON.stringify(merged, null, 2) + "\n");
     console.log(
-      `synthetic: ${incoming.length} records, ${merged.length - existing.length} new, total ${merged.length} → ${opts.out}`,
+      `${tag}: ${incoming.length} records, ${merged.length - existing.length} new, total ${merged.length} → ${opts.out}`,
     );
     return;
   }
   const urls = opts.url === undefined ? MIRRORS : [opts.url];
-  const { rows, mirror, attempts } = await fetchOverpass(urls, opts.bbox, opts.limit);
+  if (opts.snapshot) {
+    const rows = await fetchSnapshot(opts.url);
+    if (rows.length < 10) {
+      const existing = readExisting(outPath);
+      console.log(
+        `snapshot: only ${rows.length} nodes (<10) — keeping existing ${existing.length} rows, wrote nothing.`,
+      );
+      return;
+    }
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, JSON.stringify(rows) + "\n");
+    const verified = rows.filter((r) => r.verified).length;
+    console.log(
+      `snapshot: ${rows.length} real ALPR nodes (${verified} verified Flock Safety), replaced ${opts.out}`,
+    );
+    return;
+  }
+  if (opts.us) {
+    const { rows, attempts } = await fetchOverpassUS(urls, opts.limit, opts.delayMs);
+    for (const a of attempts) console.log(`mirror failed: ${a}`);
+    if (rows.length < 10) {
+      const existing = readExisting(outPath);
+      console.log(
+        `overpass --us: only ${rows.length} real ALPR nodes (<10) — keeping existing ${existing.length} rows, wrote nothing.`,
+      );
+      return;
+    }
+    mkdirSync(dirname(outPath), { recursive: true });
+    writeFileSync(outPath, JSON.stringify(rows, null, 2) + "\n");
+    const verified = rows.filter((r) => r.verified).length;
+    console.log(
+      `overpass --us (${Object.keys(METROS).length} metros): ${rows.length} real ALPR nodes (${verified} verified Flock Safety), replaced ${opts.out}`,
+    );
+    return;
+  }
+  const { rows, mirror, attempts } = await fetchOverpass(urls, activeBbox, opts.limit, opts.delayMs);
   for (const a of attempts) console.log(`mirror failed: ${a}`);
   // ≥10 real nodes → replace file with real rows only (drop synthetic seed).
   // Below that the network is likely down/sparse: keep synthetics, report honestly.

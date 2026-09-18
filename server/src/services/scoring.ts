@@ -139,3 +139,38 @@ export function scoreRoute(
     score: exposures.length * 10000 + route.distanceM,
   };
 }
+
+// Base-route sanity guard: OSRM occasionally returns garbage (e.g. a 2000km
+// detour for a 60km trip near water/borders). Driving distance is rarely more
+// than a few multiples of straight-line distance, so routes beyond the gate
+// are dropped before scoring/search/ranking ever see them.
+//
+// The multiple is length-aware: short urban trips distort ratios (one-ways,
+// cul-de-sacs), so they get a generous gate; long hauls get a tight one.
+// ROUTE_MAX_FACTOR overrides with a fixed multiple when set.
+function plausibilityFactor(straightM: number): number {
+  const f = Number(process.env.ROUTE_MAX_FACTOR);
+  if (Number.isFinite(f) && f > 0) return f;
+  if (straightM < 10_000) return 8;
+  if (straightM < 100_000) return 5;
+  return 4;
+}
+
+// Returns the distance threshold used (5km floor keeps short trips safe).
+export function plausibilityThresholdM(origin: LatLon, dest: LatLon): number {
+  const straight = distM(origin, dest);
+  return Math.max(plausibilityFactor(straight) * straight, 5000);
+}
+
+export function isPlausibleRoute(
+  distanceM: number,
+  origin: LatLon,
+  dest: LatLon,
+): boolean {
+  return (
+    typeof distanceM === "number" &&
+    Number.isFinite(distanceM) &&
+    distanceM >= 0 &&
+    distanceM <= plausibilityThresholdM(origin, dest)
+  );
+}

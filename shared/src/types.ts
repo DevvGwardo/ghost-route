@@ -13,6 +13,8 @@ export interface Camera {
   source: string;
   address?: string;
   verified: boolean;
+  brand?: string;
+  direction?: number;
 }
 
 export interface RouteRequest {
@@ -29,10 +31,18 @@ export interface Exposure {
   distM: number;
 }
 
+export interface JevTradeoff {
+  savedExposures: number;
+  extraSeconds: number;
+  extraMeters: number;
+}
+
 export interface JevVerdict {
   choice: string;
   confidence: number;
   fallbackUsed: boolean;
+  rationale?: string;
+  tradeoff?: JevTradeoff;
 }
 
 export interface RouteStep {
@@ -67,12 +77,16 @@ export interface ScoredRoute {
   jevExposure: JevExposure;
   /** Turn-by-turn steps with per-step exposure (capped at 100). */
   steps: RouteStep[];
+  /** True when the route has zero camera exposures (clean-route search). */
+  isClean?: boolean;
 }
 
 export interface RouteResponse {
   routes: ScoredRoute[];
   rankedBy: 'jev' | 'heuristic';
   jevMode: 'jev' | 'fake';
+  /** Clean-route search summary (present when the search ran). */
+  cleanSearch?: { cleanFound: boolean; rounds: number; osrmCalls: number; attempts?: number; detourRatio?: number };
 }
 
 // Envelope types for the remaining endpoints.
@@ -83,6 +97,8 @@ export interface HealthResponse {
 
 export interface CamerasResponse {
   cameras: Camera[];
+  truncated?: boolean;
+  total?: number;
 }
 
 export interface CreateCameraResponse {
@@ -93,7 +109,8 @@ export interface SystemStatusResponse {
   mode: 'jev' | 'fake';
   threshold: number;
   cameraCount: number;
-  osrm: 'https://router.project-osrm.org';
+  osrm: string;
+  plausibility?: { implausibleDropped: number; implausibleExhausted: number };
 }
 
 export interface VerifyKeyResponse {

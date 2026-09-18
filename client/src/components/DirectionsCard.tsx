@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import KeySettings, { type KeyValid } from './KeySettings';
+import { searchPlaces, type Place } from '../lib/geocode';
 import {
   ArrowLeft,
   ArrowUpDown,
@@ -21,41 +22,10 @@ export interface LatLon {
   lon: number;
 }
 
-interface Suggestion {
-  lat: number;
-  lon: number;
-  label: string;
-}
+type Suggestion = Place;
 
-interface NominatimResult {
-  lat: string;
-  lon: string;
-  display_name: string;
-}
-
-// Nominatim display names are long ("Downtown, Austin, Travis County, Texas,
-// ..."). Split into a short primary line + muted remainder so rows stay
-// readable without horizontal clipping.
-function primaryLabel(displayName: string): string {
-  return displayName.split(',').slice(0, 2).join(',').trim();
-}
-
-function secondaryLabel(displayName: string): string {
-  return displayName.split(',').slice(2, 4).join(',').trim();
-}
-
-async function geocodeList(query: string, signal: AbortSignal): Promise<Suggestion[]> {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`,
-    { headers: { Accept: 'application/json' }, signal },
-  );
-  if (!res.ok) throw new Error('Geocode request failed');
-  const list = (await res.json()) as NominatimResult[];
-  return list.map((r) => ({
-    lat: parseFloat(r.lat),
-    lon: parseFloat(r.lon),
-    label: r.display_name,
-  }));
+function fullLabel(s: Pick<Place, 'label' | 'sublabel'>): string {
+  return s.sublabel ? `${s.label}, ${s.sublabel}` : s.label;
 }
 
 interface PlaceFieldProps {
@@ -73,9 +43,10 @@ function PlaceField({ id, label, value, placeholder, icon, coordsLabel, onTextCh
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [highlight, setHighlight] = useState(-1);
-  const abortRef = useRef<AbortController | null>(null);
+  const seqRef = useRef(0);
 
-  // Debounced autocomplete dropdown.
+  // Debounced autocomplete dropdown. searchPlaces() never throws and takes
+  // no AbortSignal, so stale responses are dropped via sequence guard.
   useEffect(() => {
     const q = value.trim();
     if (q.length < 3) {
@@ -84,26 +55,19 @@ function PlaceField({ id, label, value, placeholder, icon, coordsLabel, onTextCh
       return;
     }
     const t = window.setTimeout(() => {
-      abortRef.current?.abort();
-      const ctrl = new AbortController();
-      abortRef.current = ctrl;
-      void geocodeList(q, ctrl.signal)
-        .then((list) => {
-          setSuggestions(list);
-          setHighlight(-1);
-          setOpen(list.length > 0);
-        })
-        .catch(() => {
-          /* aborted or offline — typing still works, Enter retries */
-        });
+      const seq = ++seqRef.current;
+      void searchPlaces(q).then((list) => {
+        if (seqRef.current !== seq) return; // stale — newer query in flight
+        setSuggestions(list);
+        setHighlight(-1);
+        setOpen(list.length > 0);
+      });
     }, 350);
     return () => window.clearTimeout(t);
   }, [value]);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
-
   function pick(s: Suggestion) {
-    onPick({ lat: s.lat, lon: s.lon }, s.label);
+    onPick({ lat: s.lat, lon: s.lon }, fullLabel(s));
     setOpen(false);
     setSuggestions([]);
   }
@@ -120,16 +84,10 @@ function PlaceField({ id, label, value, placeholder, icon, coordsLabel, onTextCh
       pick(suggestions[0]);
       return;
     }
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    try {
-      const list = await geocodeList(q, ctrl.signal);
-      if (list.length === 0) return;
-      pick(list[0]);
-    } catch {
-      /* leave text as-is on failure */
-    }
+    const seq = ++seqRef.current;
+    const list = await searchPlaces(q);
+    if (seqRef.current !== seq || list.length === 0) return;
+    pick(list[0]);
   }
 
   return (
@@ -196,10 +154,10 @@ function PlaceField({ id, label, value, placeholder, icon, coordsLabel, onTextCh
                 <span className="gm-suggest-icon" aria-hidden="true">
                   <MapPin size={16} />
                 </span>
-                <span className="gm-suggest-text" title={s.label}>
-                  <span className="gm-suggest-label">{primaryLabel(s.label)}</span>
-                  {secondaryLabel(s.label) && (
-                    <span className="gm-suggest-sub">{secondaryLabel(s.label)}</span>
+                <span className="gm-suggest-text" title={fullLabel(s)}>
+                  <span className="gm-suggest-label">{s.label}</span>
+                  {s.sublabel && (
+                    <span className="gm-suggest-sub">{s.sublabel}</span>
                   )}
                 </span>
               </button>

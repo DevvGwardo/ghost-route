@@ -67,6 +67,64 @@ export function noKeyLeak(
 
 const OSRM_HOST = "router.project-osrm.org";
 
+const ROUTING_PRESETS = {
+  demo: "https://router.project-osrm.org",
+  fosssgis: "https://routing.openstreetmap.de",
+} as const;
+
+// Cloud metadata endpoint — never a legitimate routing backend.
+const METADATA_IP = "169.254.169.254";
+
+function isLoopbackHostname(host: string): boolean {
+  const h = host.toLowerCase().replace(/^\[|\]$/g, "");
+  // 0.0.0.0 / :: ("all interfaces") route to localhost in practice.
+  return h === "localhost" || h === "127.0.0.1" || h === "::1" || h === "0.0.0.0" || h === "::";
+}
+
+function customRoutingOrigin(raw: string | undefined, allowLocal: boolean): string | null {
+  let u: URL;
+  try {
+    u = new URL(raw ?? "");
+  } catch {
+    return null;
+  }
+  if (u.username || u.password) return null;
+  if (isLoopbackHostname(u.hostname)) {
+    // Local dev self-host (e.g. OSRM docker on :5000). Opt-in only:
+    // loopback backends can reach anything on the box.
+    if (!allowLocal) return null;
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    return u.origin;
+  }
+  if (u.protocol !== "https:") return null;
+  if (u.hostname.toLowerCase() === METADATA_IP) return null;
+  return u.origin;
+}
+
+export interface RoutingBackend {
+  /** demo | fosssgis | custom — reported on GET /api/system/status. */
+  name: string;
+  /** https origin (no path, no credentials). */
+  origin: string;
+}
+
+/**
+ * Resolve the routing backend from operator env (never user input).
+ * ROUTING_BACKEND=demo (default) | fosssgis | custom (+ OSRM_BASE).
+ * Invalid config fails safe to demo — never throws, never crashes boot.
+ */
+export function resolveRoutingBackend(
+  env: Record<string, string | undefined> = process.env,
+): RoutingBackend {
+  const preset = (env.ROUTING_BACKEND ?? "demo").trim().toLowerCase();
+  if (preset === "fosssgis") return { name: "fosssgis", origin: ROUTING_PRESETS.fosssgis };
+  if (preset === "custom") {
+    const origin = customRoutingOrigin(env.OSRM_BASE, env.ALLOW_LOCAL_ROUTING === "1");
+    if (origin) return { name: "custom", origin };
+  }
+  return { name: "demo", origin: ROUTING_PRESETS.demo };
+}
+
 /**
  * Validate the OSRM base URL against the allowlist.
  * Only https://router.project-osrm.org is permitted.

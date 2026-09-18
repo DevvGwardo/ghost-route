@@ -9,6 +9,8 @@ export interface Camera {
   source: string;
   address?: string;
   verified: boolean;
+  brand?: string;
+  direction?: number;
 }
 
 const DATA_FILE = join(
@@ -77,6 +79,31 @@ export function camerasInBbox(
   maxLat: number,
   limit = DEFAULT_LIMIT,
 ): Camera[] {
+  return camerasInBboxPage(minLon, minLat, maxLon, maxLat, limit).cameras;
+}
+
+/**
+ * US-scale-safe bbox query (additive v1.1).
+ * - Same validation as camerasInBbox (RangeError on bad input).
+ * - Matches are sorted by id (deterministic regardless of import order),
+ *   then grid-decimated: when total > limit, every Nth camera
+ *   (N = ceil(total / limit)) is returned so the sample spans the whole
+ *   bbox instead of collapsing to one file-order cluster.
+ * - `truncated` is true iff not all matches fit in the page.
+ */
+export interface BboxPage {
+  cameras: Camera[];
+  total: number;
+  truncated: boolean;
+}
+
+export function camerasInBboxPage(
+  minLon: number,
+  minLat: number,
+  maxLon: number,
+  maxLat: number,
+  limit = DEFAULT_LIMIT,
+): BboxPage {
   for (const n of [minLon, minLat, maxLon, maxLat]) {
     if (!Number.isFinite(n)) throw new RangeError("bbox bounds must be finite numbers");
   }
@@ -87,9 +114,15 @@ export function camerasInBbox(
   }
   if (!Number.isInteger(limit)) throw new RangeError("limit must be an integer");
   const n = Math.min(Math.max(limit, 1), MAX_LIMIT);
-  return cameras
+  const matched = cameras
     .filter((c) => c.lon >= minLon && c.lon <= maxLon && c.lat >= minLat && c.lat <= maxLat)
-    .slice(0, n);
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  if (matched.length <= n) {
+    return { cameras: matched, total: matched.length, truncated: false };
+  }
+  const stride = Math.ceil(matched.length / n);
+  const page = matched.filter((_, i) => i % stride === 0).slice(0, n);
+  return { cameras: page, total: matched.length, truncated: true };
 }
 
 export function addCamera(lat: number, lon: number, address?: string): Camera {

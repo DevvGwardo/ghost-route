@@ -1,10 +1,19 @@
 import { Router } from 'express';
 import { allCameras } from '../store.js';
 import { jevMode, confidenceThreshold, verifyKey } from '../jev.js';
+import { plausibilityStats } from './route.js';
+import { resolveRoutingBackend } from '../security.js';
 
 const router = Router();
 
-const OSRM_BASE = 'https://router.project-osrm.org' as const;
+// Active routing backend (dynamic — follows ROUTING_BACKEND env).
+function routingOrigin(): string {
+  try {
+    return resolveRoutingBackend().origin;
+  } catch {
+    return 'https://router.project-osrm.org';
+  }
+}
 
 function apiKeyFromHeader(headerVal: string | string[] | undefined): string | undefined {
   const v = Array.isArray(headerVal) ? headerVal[0] : headerVal;
@@ -23,7 +32,7 @@ export function healthPayload(apiKeyHeader?: string) {
   };
 }
 
-// GET /status → { mode, threshold, cameraCount, osrm }
+// GET /status → { mode, threshold, cameraCount, osrm, plausibility? }
 router.get('/status', (req, res) => {
   const mode = jevMode(apiKeyFromHeader(req.header('x-typesafe-key')));
   const threshold = confidenceThreshold();
@@ -32,7 +41,8 @@ router.get('/status', (req, res) => {
     mode,
     threshold: Number.isFinite(threshold) ? threshold : 0.4,
     cameraCount,
-    osrm: OSRM_BASE,
+    osrm: routingOrigin(),
+    plausibility: plausibilityStats(),
   });
 });
 

@@ -646,6 +646,11 @@ button {
   white-space: nowrap;
 }
 
+.gm-jevs.muted {
+  background: #f1f3f4;
+  color: var(--gm-muted);
+}
+
 .gm-fallback {
   display: inline-flex;
   align-items: center;
@@ -1153,4 +1158,131 @@ button {
 .gm-jev-live.heur {
   background: #f1f3f4;
   color: var(--gm-muted);
+}
+
+/* ---------- JEV why + comparison ---------- */
+
+.gm-jev-why {
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #f6fafe;
+}
+
+.gm-jev-why-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gm-blue-dark);
+}
+
+.gm-jev-why-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.gm-jev-why-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gm-compare {
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.gm-compare table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.gm-compare th,
+.gm-compare td {
+  padding: 8px 10px;
+  text-align: right;
+  border-top: 1px solid #e8eaed;
+}
+
+.gm-compare th:first-child,
+.gm-compare td:first-child {
+  text-align: left;
+}
+
+.gm-compare thead th {
+  border-top: none;
+  color: var(--gm-muted);
+  font-weight: 600;
+  font-size: 12px;
+  background: #f8f9fa;
+}
+
+.gm-compare tr.sel td {
+  background: #f6fafe;
+  font-weight: 600;
+}
+
+.gm-compare .gm-sheet-meta {
+  margin: 0;
+  padding: 8px 10px;
+}
+
+/* ---------- clean-search banner + clip-proof route cards (additive) ---------- */
+
+.gm-clean-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.gm-clean-banner.found {
+  background: var(--gm-green-bg);
+  color: var(--gm-green-text);
+}
+
+.gm-clean-banner.miss {
+  background: var(--gm-amber-bg);
+  color: var(--gm-amber-text);
+}
+
+.gm-clean-title {
+  font-weight: 600;
+}
+
+.gm-clean-meta {
+  font-size: 12px;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Route cards are a flex row: the text column previously had no flex-grow
+   while the badge cluster was flex-shrink:0, so up to 4 chips squeezed the
+   duration/distance column until it clipped. Give the text column first
+   claim on space, let badges shrink onto wrapped rows, and never break the
+   duration number across lines. */
+.gm-card-main {
+  flex: 1 1 auto;
+}
+
+.gm-card-badges {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.gm-duration {
+  white-space: nowrap;
 }

@@ -6,7 +6,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D20-339933" alt="Node 20+">
   <img src="https://img.shields.io/badge/stack-TypeScript%20%C2%B7%20React%20%C2%B7%20Express-3178c6" alt="TypeScript, React, Express">
-  <img src="https://img.shields.io/badge/tests-45%2F45-brightgreen" alt="45 of 45 tests passing">
+  <img src="https://img.shields.io/badge/tests-110%2F110-brightgreen" alt="110 of 110 tests passing">
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@ Flock Safety ALPR cameras log every passing plate. Ghost Route makes that exposu
 
 | | |
 |---|---|
-| 🗺️ | **Camera-aware map** — 650 real ALPR nodes (Austin metro) with exposure-radius overlays |
+| 🗺️ | **Camera-aware map** — 141,000+ real ALPR nodes nationwide with exposure-radius overlays |
 | 🛣️ | **Ranked routes** — up to 5 candidates scored by exposure first, drive time second |
 | 🧠 | **JEV ranking + heuristic fallback** — TypeSafe `system_one` choice head live, deterministic scoring offline |
 | 👁️ | **Seen-risk meter** — probability of being observed by ≥1 camera, per route and per turn |
@@ -84,24 +84,25 @@ Precedence per request: `x-typesafe-key` header → `TYPESAFE_API_KEY` env → n
 
 ## Camera data
 
-`server/data/flock-cameras.json` — **650 real ALPR nodes** from OpenStreetMap (`surveillance:type=ALPR`, Austin metro), 591 with `manufacturer=Flock Safety` → `verified:true`. Refresh anytime:
+`server/data/flock-cameras.json` — **~141,000 real ALPR nodes nationwide** from OpenStreetMap (`surveillance:type=ALPR`, same upstream as deflock.me / Finding Flock), ~114,000 with `brand: Flock Safety` → `verified:true`. Refresh anytime:
 
 ```sh
-node scripts/import-deflock.mjs               # Overpass → normalize → merge, de-duped
-node scripts/import-deflock.mjs --synthetic   # regenerate the seed
-node scripts/repro-avoid.mjs                  # avoidance proof: detour 3 → 0 exposures
+node scripts/import-deflock.mjs --snapshot  # hourly US snapshot (140k+ nodes, reliable)
+node scripts/import-deflock.mjs --us        # tile 15 metros via Overpass (slow, rate-limited)
+node scripts/import-deflock.mjs --metro dallas # one metro via Overpass
+node scripts/repro-avoid.mjs                # avoidance proof: detour 3 → 0 exposures
 ```
 
 ## Self-hosting notes
 
 - **Ports** — server `8801` (`PORT` in `.env`), client `5174`. In dev the Vite proxy forwards `/api`, so no extra config; for split deploys set `VITE_API_URL` before `npm run build -w client`.
 - **Privacy** — origin/destination are POSTed to the server (and to OSRM for routing). Self-host both if that matters to you; the TypeSafe key travels as a header and is never logged or persisted server-side.
-- **Production hardening** (defaults are local-dev grade) — restrict CORS origins in `server/src/index.ts`, put auth in front of `POST /api/cameras`, note rate limits + camera store are in-memory (single instance), and replace the OSRM demo + Nominatim with hosted instances before real traffic.
+- **Production hardening** (defaults are local-dev grade) — restrict CORS origins in `server/src/index.ts`, put auth in front of `POST /api/cameras`, note rate limits + camera store are in-memory (single instance), and switch routing off the OSRM demo (`ROUTING_BACKEND=fosssgis`, or self-host + `ROUTING_BACKEND=custom`) plus Nominatim with hosted instances before real traffic.
 
 ## Attribution
 
-- Map tiles: [CARTO Voyager](https://carto.com/) (free, no key) + © OpenStreetMap contributors. Routing: OSRM demo (rate-limited, not for production). Geocoding: Nominatim (demo-grade volume; heavy use needs your own instance).
-- Camera nodes derived from OpenStreetMap (`surveillance:type=ALPR`, ODbL) — keep the OSM attribution when reusing the dataset.
+- Map tiles: [CARTO Voyager](https://carto.com/) (free, no key) + © OpenStreetMap contributors. Routing: OSRM-protocol backend — demo by default (rate-limited), `ROUTING_BACKEND=fosssgis` for higher capacity, `=custom` for self-hosted. Geocoding: Nominatim (demo-grade volume; heavy use needs your own instance).
+- Camera nodes derived from OpenStreetMap (`surveillance:type=ALPR`, ODbL) via the flockhopper3/deflock-data hourly snapshot — keep the OSM attribution when reusing the dataset. City-level aggregates and methodology: Finding Flock.
 
 ## License
 

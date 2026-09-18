@@ -18,14 +18,23 @@ export interface RouteGeom {
   steps: RouteStep[];
 }
 
-const OSRM_BASE = "https://router.project-osrm.org/route/v1/driving";
-const TIMEOUT_MS = 8000;
-const CACHE_TTL_MS = 60_000;
+import { resolveRoutingBackend } from "../security.js";
+import { get as cacheGet, set as cacheSet } from "../cache.js";
 
-const cache = new Map<string, { val: RouteGeom[]; exp: number }>();
+function timeoutMs(): number {
+  const v = Number(process.env.ROUTING_TIMEOUT_MS);
+  if (!Number.isFinite(v)) return 8000;
+  return Math.min(30_000, Math.max(1000, Math.floor(v)));
+}
 
-function key(o: LatLon, d: LatLon): string {
-  return `${o.lat},${o.lon}>${d.lat},${d.lon}:steps=1`;
+function routingCacheTtlMs(): number {
+  const v = Number(process.env.ROUTING_CACHE_TTL_MS);
+  if (!Number.isFinite(v)) return 60_000;
+  return Math.min(600_000, Math.max(10_000, Math.floor(v)));
+}
+
+function key(backend: string, o: LatLon, d: LatLon): string {
+  return `${backend}|${o.lat},${o.lon}>${d.lat},${d.lon}:steps=1`;
 }
 
 function cap(s: string): string {
@@ -96,16 +105,38 @@ export async function fetchRoutes(
   dest: LatLon,
   via?: LatLon,
 ): Promise<RouteGeom[]> {
-  const k = key(origin, dest) + (via ? `~${via.lat},${via.lon}` : "");
-  const hit = cache.get(k);
-  if (hit && hit.exp > Date.now()) return hit.val;
+  const primary = resolveRoutingBackend();
+  const k = key(primary.name, origin, dest) + (via ? `~${via.lat},${via.lon}` : "");
+  const hit = cacheGet<RouteGeom[]>(k);
+  if (hit) return hit;
 
+  try {
+    const out = await attempt(primary.origin, origin, dest, via);
+    cacheSet(k, out, routingCacheTtlMs());
+    return out;
+  } catch (e) {
+    // One passive fallback to the demo backend when a custom/alt primary
+    // is down. Never chains further; demo failure throws through.
+    if (primary.name === "demo") throw e;
+    const demo = resolveRoutingBackend({ ...process.env, ROUTING_BACKEND: "demo" });
+    const out = await attempt(demo.origin, origin, dest, via);
+    cacheSet(k, out, routingCacheTtlMs());
+    return out;
+  }
+}
+
+async function attempt(
+  base: string,
+  origin: LatLon,
+  dest: LatLon,
+  via?: LatLon,
+): Promise<RouteGeom[]> {
   const viaPart = via ? `;${via.lon},${via.lat}` : "";
   const url =
-    `${OSRM_BASE}/${origin.lon},${origin.lat}${viaPart};${dest.lon},${dest.lat}` +
+    `${base}/route/v1/driving/${origin.lon},${origin.lat}${viaPart};${dest.lon},${dest.lat}` +
     `?overview=full&geometries=geojson&alternatives=3&steps=true`;
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const t = setTimeout(() => ctrl.abort(), timeoutMs());
   try {
     const res = await fetch(url, { signal: ctrl.signal });
     if (!res.ok) throw new Error("routing-unavailable");
@@ -127,7 +158,6 @@ export async function fetchRoutes(
       durationS: r.duration ?? 0,
       steps: buildSteps(r.legs),
     }));
-    cache.set(k, { val: out, exp: Date.now() + CACHE_TTL_MS });
     return out;
   } catch {
     throw new Error("routing-unavailable");

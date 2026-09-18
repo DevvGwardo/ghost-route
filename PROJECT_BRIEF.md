@@ -30,12 +30,23 @@ TypeSafe Jev (`system_one` choice head) with a deterministic fallback when no
 - No key: deterministic `fake` scorer, same return shape, `jevMode:'fake'`.
 - Never log the API key. Never commit `.env`.
 
-## Routing (OSRM public demo, no key)
+## Routing (OSRM-protocol backend, demo by default, swappable)
 
-`https://router.project-osrm.org/route/v1/driving/{lon,lat};{lon,lat}?overview=full&geometries=geojson&alternatives=3`
+`ROUTING_BACKEND=demo|fosssgis|custom` (`server/src/services/osrm.ts`;
+demo = public OSRM, fosssgis = higher-capacity public instance, custom =
+self-hosted origin via `OSRM_BASE`, validated, fails-safe-to-demo).
+Non-demo primaries fall back to demo once on hard failure; active backend on
+`GET /api/system/status`.
+`{base}/route/v1/driving/{lon,lat};{lon,lat}?overview=full&geometries=geojson&alternatives=3`
 Avoidance: score alternatives by cameras within `bufferMeters` of the polyline;
-if all exposed, build waypoint-detour candidates (offset midpoints
-perpendicular, re-query OSRM) and re-score. Haversine for distances.
+base routes pass a plausibility gate first (length-aware multiple of
+straight-line distance; one refetch on transient garbage, then 502 with
+`reason: implausible-routes` vs `osrm-error`; counters on
+`GET /api/system/status`). If none is clean, iterative clean-route search
+(`server/src/cleanroute.ts`): worst-exposure step → paired perpendicular
+bypass vias at 500m/1km/2km, re-query OSRM (max 3 rounds, 7 calls, 1.5x
+distance cap; tune via `CLEAN_MAX_ROUNDS` / `CLEAN_VIA_TIMEOUT_MS`),
+re-score, keep best. Haversine for distances.
 
 ## Camera data (server/data/flock-cameras.json owned by data agent)
 
@@ -45,7 +56,8 @@ for offline tests. Import script `scripts/import-deflock.mjs` re-runnable.
 ## Client (Vite + React 18 + MapLibre GL)
 
 - `MapView.tsx`: Leaflet map, OSM tiles, click sets origin/dest.
-- `SearchBar.tsx`: Nominatim geocode.
+- `DirectionsCard.tsx`: Photon geocode (free, no key; Nominatim fallback),
+  route options, avoid toggle + buffer slider, BYOK key field.
 - `CameraLayer.tsx`: markers + buffer-radius circles.
 - `RoutePanel.tsx`: ranked routes, exposure counts, Jev confidence badge,
   avoid toggle + buffer slider.

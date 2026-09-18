@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Layers, LocateFixed } from 'lucide-react';
 import MapView, { type BBox, type RecenterSignal } from './components/MapView';
 import DirectionsCard from './components/DirectionsCard';
-import RouteSheet from './components/RouteSheet';
+import RouteSheet, { type CleanSearch } from './components/RouteSheet';
 import { ApiError, getCameras, postRoute } from './lib/api';
 import { TYPESAFE_KEY_STORAGE, type KeyValid } from './components/KeySettings';
 import './app.css';
@@ -33,8 +33,15 @@ export interface RankedRoute {
   durationS: number;
   exposures: RouteExposure[];
   exposureCount: number;
+  isClean?: boolean;
   score: number;
-  jev: { choice: string; confidence: number; fallbackUsed: boolean };
+  jev: {
+    choice: string;
+    confidence: number;
+    fallbackUsed: boolean;
+    rationale?: string;
+    tradeoff?: { savedExposures: number; extraSeconds: number; extraMeters: number };
+  };
   steps?: {
     index: number;
     instruction: string;
@@ -64,6 +71,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rankedBy, setRankedBy] = useState<string | null>(null);
   const [jevMode, setJevMode] = useState<string | null>(null);
+  const [cleanSearch, setCleanSearch] = useState<CleanSearch | null>(null);
   const [typesafeKey, setTypesafeKey] = useState<string>(() => {
     try {
       return localStorage.getItem(TYPESAFE_KEY_STORAGE) ?? '';
@@ -120,12 +128,21 @@ export default function App() {
       setRoutes(res.routes);
       setRankedBy(res.rankedBy);
       setJevMode(res.jevMode);
+      setCleanSearch(res.cleanSearch ?? null);
       setSelectedId(res.routes.length > 0 ? res.routes[0].id : null);
       // Server proved the key works — mark live even without explicit Test.
       if (res.rankedBy === 'jev' && res.jevMode === 'jev') setKeyValid(true);
     } catch (e) {
       if (e instanceof ApiError && e.status === 429) {
         setError('Too many requests — wait a moment, then try again.');
+      } else if (
+        e instanceof ApiError &&
+        e.status === 502 &&
+        typeof e.body === 'object' &&
+        e.body !== null &&
+        (e.body as { reason?: unknown }).reason === 'implausible-routes'
+      ) {
+        setError('No sensible route found — try nearby points.');
       } else {
         setError(e instanceof Error ? e.message : 'Route request failed');
       }
@@ -148,6 +165,17 @@ export default function App() {
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [origin, destination]);
+
+  // Map click/drag sets coords with no place label — mirror the coords into
+  // the label so the search box never shows a stale place name.
+  const handleOriginChange = useCallback((p: LatLon) => {
+    setOrigin(p);
+    setOriginLabel(`${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`);
+  }, []);
+  const handleDestinationChange = useCallback((p: LatLon) => {
+    setDestination(p);
+    setDestinationLabel(`${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`);
+  }, []);
 
   const swapEndpoints = useCallback(() => {
     setOrigin(destination);
@@ -187,8 +215,8 @@ export default function App() {
         <MapView
           origin={origin}
           destination={destination}
-          onOriginChange={setOrigin}
-          onDestinationChange={setDestination}
+          onOriginChange={handleOriginChange}
+          onDestinationChange={handleDestinationChange}
           onBoundsChange={handleBoundsChange}
           cameras={cameras}
           showCameras={showCameras}
@@ -269,6 +297,7 @@ export default function App() {
         rankedBy={rankedBy}
         jevMode={jevMode}
         jevLive={jevLive}
+        cleanSearch={cleanSearch}
         onFind={findRoute}
       />
     </div>

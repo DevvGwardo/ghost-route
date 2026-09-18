@@ -72,4 +72,16 @@ describe('oss byok verify + hardening', () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it('POST /api/cameras rejects empty-string address with 400 (never 500)', async () => {
+    for (const address of ['', 42, {}]) {
+      const { res, body } = await fetchJson(base, '/api/cameras', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ lat: 30.27, lon: -97.74, address }),
+      });
+      expect(res.status).toBe(400);
+      expect((body as { error: string }).error).toBe('address-invalid');
+    }
+  });
 });

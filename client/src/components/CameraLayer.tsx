@@ -24,6 +24,15 @@ const BUF_FILL = 'gr-cam-buffer-fill';
 const BUF_LINE = 'gr-cam-buffer-line';
 const DOT_LAYER = 'gr-cam-dots';
 
+// Cap on rendered markers: zoomed-out/US viewports can return hundreds of
+// cameras (App fetches with a server limit). Rendering is capped so the map
+// never overloads; the overflow count surfaces in the "+N more — zoom in"
+// notice below.
+export const MAX_RENDERED_CAMERAS = 1000;
+// Buffer polygons are the expensive layer (49-vertex polygon per camera).
+// Above this count only dots render; buffers reappear once zoomed in.
+const MAX_BUFFERED_CAMERAS = 250;
+
 function esc(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -120,32 +129,39 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
 
     const apply = () => {
       if (cancelled || !map.isStyleLoaded()) return;
+      // Slice first so every viewport — street or full-US — renders a
+      // bounded set. `cameras` prop identity changes on each bbox fetch,
+      // so this re-runs at all zooms.
+      const visible = cameras.slice(0, MAX_RENDERED_CAMERAS);
+      const showBuffers = visible.length <= MAX_BUFFERED_CAMERAS;
       cleanup();
       try {
-        const buffers: FeatureCollection = {
-          type: 'FeatureCollection',
-          features: cameras.map((c) => ({
-            type: 'Feature',
-            properties: { id: c.id },
-            geometry: { type: 'Polygon', coordinates: bufferPolygon(c.lat, c.lon, bufferMeters) },
-          })),
-        };
-        map.addSource(BUF_SRC, { type: 'geojson', data: buffers });
-        map.addLayer({
-          id: BUF_FILL,
-          type: 'fill',
-          source: BUF_SRC,
-          paint: { 'fill-color': '#d93025', 'fill-opacity': 0.06 },
-        });
-        map.addLayer({
-          id: BUF_LINE,
-          type: 'line',
-          source: BUF_SRC,
-          paint: { 'line-color': '#d93025', 'line-width': 1 },
-        });
+        if (showBuffers) {
+          const buffers: FeatureCollection = {
+            type: 'FeatureCollection',
+            features: visible.map((c) => ({
+              type: 'Feature',
+              properties: { id: c.id },
+              geometry: { type: 'Polygon', coordinates: bufferPolygon(c.lat, c.lon, bufferMeters) },
+            })),
+          };
+          map.addSource(BUF_SRC, { type: 'geojson', data: buffers });
+          map.addLayer({
+            id: BUF_FILL,
+            type: 'fill',
+            source: BUF_SRC,
+            paint: { 'fill-color': '#d93025', 'fill-opacity': 0.06 },
+          });
+          map.addLayer({
+            id: BUF_LINE,
+            type: 'line',
+            source: BUF_SRC,
+            paint: { 'line-color': '#d93025', 'line-width': 1 },
+          });
+        }
         const dots: FeatureCollection = {
           type: 'FeatureCollection',
-          features: cameras.map((c) => ({
+          features: visible.map((c) => ({
             type: 'Feature',
             properties: {
               id: c.id,
@@ -162,10 +178,13 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
           type: 'circle',
           source: DOT_SRC,
           paint: {
-            'circle-radius': 5,
+            // Small + translucent when zoomed out (dense metros read as
+            // texture, not a red blob); full size/opacity up close.
+            'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2.5, 10, 4, 13, 6],
+            'circle-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0.55, 12, 0.95],
             'circle-color': '#d93025',
             'circle-stroke-color': '#ffffff',
-            'circle-stroke-width': 1.5,
+            'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 5, 0, 10, 1.5],
           },
         });
         map.on('click', DOT_LAYER, onDotClick);
@@ -188,5 +207,32 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
     };
   }, [map, cameras, bufferMeters]);
 
-  return null;
+  const hidden = Math.max(0, cameras.length - MAX_RENDERED_CAMERAS);
+  if (hidden <= 0) return null;
+  // Inline styles (no css file change): small status pill over the map.
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label={`${hidden} more cameras outside the render cap. Zoom in to see them.`}
+      title="Zoom in to render the remaining cameras"
+      style={{
+        position: 'absolute',
+        left: '50%',
+        bottom: 12,
+        transform: 'translateX(-50%)',
+        zIndex: 5,
+        background: 'rgba(32,33,36,0.92)',
+        color: '#fff',
+        fontSize: 12,
+        lineHeight: '16px',
+        padding: '6px 12px',
+        borderRadius: 16,
+        pointerEvents: 'none',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      +{hidden} more — zoom in
+    </div>
+  );
 }

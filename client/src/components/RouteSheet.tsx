@@ -5,6 +5,8 @@ interface SheetJev {
   choice: string;
   confidence: number;
   fallbackUsed: boolean;
+  rationale?: string;
+  tradeoff?: { savedExposures: number; extraSeconds: number; extraMeters: number };
 }
 
 export interface SheetJevExposure {
@@ -19,10 +21,26 @@ export interface SheetRoute {
   distanceM: number;
   durationS: number;
   exposureCount: number;
+  isClean?: boolean;
   jev: SheetJev;
   steps?: RouteStep[];
   exposureP?: number;
   jevExposure?: SheetJevExposure;
+}
+
+export interface CleanSearch {
+  cleanFound: boolean;
+  rounds: number;
+  osrmCalls?: number;
+  attempts?: number;
+  detourRatio?: number | null;
+}
+
+function fmtDetour(ratio?: number | null): string | null {
+  if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
+  const pct = Math.round((ratio - 1) * 100);
+  if (pct <= 0) return 'no extra distance';
+  return `+${pct}% longer`;
 }
 
 interface RouteSheetProps {
@@ -35,6 +53,7 @@ interface RouteSheetProps {
   rankedBy: string | null;
   jevMode: string | null;
   jevLive?: boolean;
+  cleanSearch?: CleanSearch | null;
   onFind: () => void;
 }
 
@@ -48,6 +67,12 @@ function fmtDur(s: number): string {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, '0')} min`;
+}
+
+function fmtTimeDiff(s: number, fastest: number): string {
+  if (!(s > fastest)) return 'fastest';
+  const mins = Math.round((s - fastest) / 60);
+  return mins <= 0 ? 'fastest' : `+${mins} min`;
 }
 
 function seenRisk(route: SheetRoute): { p: number; caption: string; fallback: boolean } | null {
@@ -114,6 +139,13 @@ function ExposureBadge({ count }: { count: number }) {
 }
 
 function JevChip({ jev }: { jev: SheetJev }) {
+  if (jev.fallbackUsed) {
+    return (
+      <span className="gm-jevs muted" title="Heuristic score — add a Jev key for AI ranking">
+        heur
+      </span>
+    );
+  }
   return (
     <span className="gm-jevs" title={`Jev choice ${jev.choice}`}>
       {Math.round(jev.confidence * 100)}%
@@ -134,10 +166,104 @@ function JevLiveChip({ live }: { live: boolean }) {
   );
 }
 
+function fmtTradeoffExtra(t: NonNullable<SheetJev['tradeoff']>): string | null {
+  const parts: string[] = [];
+  if (t.savedExposures > 0) parts.push(`avoids ${t.savedExposures} cam${t.savedExposures === 1 ? '' : 's'}`);
+  if (t.extraSeconds > 0) {
+    const m = Math.round(t.extraSeconds / 60);
+    parts.push(m <= 0 ? `+<1 min` : `+${m} min`);
+  }
+  if (t.extraMeters > 0) parts.push(`+${(t.extraMeters / 1000).toFixed(1)} km`);
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+function JevWhy({ route, live }: { route: SheetRoute; live: boolean }) {
+  const { jev, jevExposure } = route;
+  const tradeoff = jev.tradeoff ? fmtTradeoffExtra(jev.tradeoff) : null;
+  const highRisk = (route.steps ?? []).filter((s) => (s.exposureP ?? 0) > 0.1).length;
+  if (!jev.rationale && !tradeoff && jevExposure == null) return null;
+  return (
+    <div className="gm-jev-why" role="status" aria-label={`Why this route: ${jev.rationale ?? ''}`}>
+      <div className="gm-jev-why-head">
+        <KeyRound size={14} aria-hidden="true" />
+        <span>{live ? 'JEV pick' : 'Heuristic pick'} · {Math.round(jev.confidence * 100)}% conf</span>
+        {jev.fallbackUsed && <span className="gm-fallback">fallback</span>}
+      </div>
+      {jev.rationale && <p className="gm-jev-why-text">{jev.rationale}</p>}
+      <div className="gm-jev-why-meta">
+        {tradeoff && <span className="gm-jevs">{tradeoff}</span>}
+        {jevExposure && (
+          <span className="gm-jevs" title={`Exposure estimate source: ${jevExposure.source}`}>
+            seen {Math.round(jevExposure.p * 100)}% · {jevExposure.source === 'geometric' ? 'geom' : 'JEV'}
+            {typeof jevExposure.confidence === 'number' ? ` · ${Math.round(jevExposure.confidence * 100)}%` : ''}
+          </span>
+        )}
+        {highRisk > 0 && <span className="gm-fallback">{highRisk} risky turn{highRisk === 1 ? '' : 's'}</span>}
+      </div>
+    </div>
+  );
+}
+
+function CleanBanner({ search, total }: { search: CleanSearch; total: number }) {
+  if (search.cleanFound) {
+    const meta: string[] = [];
+    const detour = fmtDetour(search.detourRatio);
+    if (detour) meta.push(detour);
+    if (search.osrmCalls != null) meta.push(`${search.osrmCalls} checks`);
+    return (
+      <div className="gm-clean-banner found" role="status">
+        <ShieldCheck size={16} aria-hidden="true" />
+        <span className="gm-clean-title">Camera-free route found</span>
+        {meta.length > 0 && <span className="gm-clean-meta">{meta.join(' · ')}</span>}
+      </div>
+    );
+  }
+  return (
+    <div className="gm-clean-banner miss" role="status">
+      <ShieldAlert size={16} aria-hidden="true" />
+      <span className="gm-clean-title">
+        No camera-free route{total > 0 ? ` — best of ${total} below` : ''}
+      </span>
+    </div>
+  );
+}
+
+function CompareTable({ routes, selectedId }: { routes: SheetRoute[]; selectedId: string | null }) {
+  if (routes.length < 2) return null;
+  return (
+    <div className="gm-compare" aria-label="Route comparison">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Route</th>
+            <th scope="col">Time</th>
+            <th scope="col">Cams</th>
+            <th scope="col">Seen</th>
+            <th scope="col">JEV</th>
+          </tr>
+        </thead>
+        <tbody>
+          {routes.map((r, i) => (
+            <tr key={r.id} aria-current={r.id === selectedId ? 'true' : undefined} className={r.id === selectedId ? 'sel' : undefined}>
+              <td className="gm-tabular">R{i + 1}</td>
+              <td className="gm-tabular">{fmtDur(r.durationS)}</td>
+              <td className="gm-tabular">{r.exposureCount}</td>
+              <td className="gm-tabular">{r.jevExposure ? `${Math.round(r.jevExposure.p * 100)}%` : r.exposureP != null ? `${Math.round(r.exposureP * 100)}%` : '—'}</td>
+              <td className="gm-tabular">{Math.round(r.jev.confidence * 100)}%{r.jev.fallbackUsed ? '†' : ''}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="gm-sheet-meta">† fallback · Seen = observed-by-≥1-camera probability</p>
+    </div>
+  );
+}
+
 export default function RouteSheet(props: RouteSheetProps) {
-  const { routes, selectedId, onSelect, loading, expanded, onToggle, rankedBy, jevMode, jevLive = false, onFind } =
+  const { routes, selectedId, onSelect, loading, expanded, onToggle, rankedBy, jevMode, jevLive = false, cleanSearch = null, onFind } =
     props;
   const best = routes.find((r) => r.id === selectedId) ?? routes[0] ?? null;
+  const fastest = routes.reduce((m, r) => Math.min(m, r.durationS), Infinity);
 
   return (
     <section className="gm-sheet" aria-label="Routes">
@@ -154,7 +280,11 @@ export default function RouteSheet(props: RouteSheetProps) {
       </button>
       <div className="gm-sheet-body">
         {loading && (
-          <ul className="gm-skeleton-list" aria-label="Loading routes">
+          <>
+            <p className="gm-sheet-meta" role="status">
+              Searching for a zero-exposure route…
+            </p>
+            <ul className="gm-skeleton-list" aria-label="Loading routes">
             {[0, 1, 2].map((i) => (
               <li key={i} className="gm-skeleton-card" aria-hidden="true">
                 <div className="gm-skeleton-line w60" />
@@ -162,7 +292,10 @@ export default function RouteSheet(props: RouteSheetProps) {
               </li>
             ))}
           </ul>
+          </>
         )}
+
+        {!loading && cleanSearch && <CleanBanner search={cleanSearch} total={routes.length} />}
 
         {!loading && routes.length === 0 && (
           <div className="gm-empty">
@@ -186,11 +319,9 @@ export default function RouteSheet(props: RouteSheetProps) {
               </span>
             </span>
             <span className="gm-peek-badges">
-              <JevLiveChip live={jevLive} />
               <ExposureBadge count={best.exposureCount} />
               <SeenRiskCompact route={best} />
               <JevChip jev={best.jev} />
-              {best.jev.fallbackUsed && <span className="gm-fallback">fallback</span>}
             </span>
           </button>
         )}
@@ -200,15 +331,16 @@ export default function RouteSheet(props: RouteSheetProps) {
             <div className="gm-sheet-status">
               <JevLiveChip live={jevLive} />
             </div>
-            {rankedBy && (
-              <p className="gm-sheet-meta">
-                Ranked by {rankedBy}
-                {jevMode ? ` (${jevMode})` : ''}
-              </p>
+            {rankedBy === 'jev' ? (
+              <p className="gm-sheet-meta">Ranked by Jev AI</p>
+            ) : jevMode === 'jev' ? (
+              <p className="gm-sheet-meta">Ranked by fewest cameras · Jev was uncertain this time</p>
+            ) : (
+              <p className="gm-sheet-meta">Ranked by fewest cameras · add a Jev key for AI ranking</p>
             )}
             <ol className="gm-route-list">
               {routes.map((r, i) => {
-                const clean = r.exposureCount === 0;
+                const clean = r.isClean === true || r.exposureCount === 0;
                 return (
                   <li key={r.id}>
                     <button
@@ -221,13 +353,13 @@ export default function RouteSheet(props: RouteSheetProps) {
                       <span className="gm-card-main">
                         <span className="gm-duration">{fmtDur(r.durationS)}</span>
                         <span className="gm-subline">
-                          {fmtKm(r.distanceM)} · via route {i + 1}
+                          {fmtKm(r.distanceM)} · {fmtTimeDiff(r.durationS, fastest)}
                         </span>
                       </span>
                       <span className="gm-card-badges">
                         <ExposureBadge count={r.exposureCount} />
+                        <SeenRiskCompact route={r} />
                         <JevChip jev={r.jev} />
-                        {r.jev.fallbackUsed && <span className="gm-fallback">fallback</span>}
                       </span>
                     </button>
                   </li>
@@ -236,6 +368,8 @@ export default function RouteSheet(props: RouteSheetProps) {
             </ol>
             <div className="gm-selected-detail">
               <SeenRiskRow route={best} />
+              <JevWhy route={best} live={jevLive} />
+              <CompareTable routes={routes} selectedId={selectedId} />
               <TurnSteps steps={best.steps} />
             </div>
           </div>

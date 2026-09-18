@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { distM, pointToPolylineDistM, scoreRoute } from '../server/src/services/scoring';
+import { distM, pointToPolylineDistM, scoreRoute, isPlausibleRoute } from '../server/src/services/scoring';
 import { AUSTIN, DALLAS, makeCamera, straightCoords } from './helpers';
 
 describe('scoring: distM (haversine)', () => {
@@ -75,5 +75,50 @@ describe('scoring: scoreRoute', () => {
     const cams = [makeCamera('far', AUSTIN.lat + 5, AUSTIN.lon + 5)];
     const r = scoreRoute({ coordinates: line, distanceM: 5000, durationS: 600 }, cams, 150);
     expect(r.exposureCount).toBe(0);
+  });
+});
+
+describe('scoring: isPlausibleRoute (base-route sanity guard)', () => {
+  const SAVED = process.env.ROUTE_MAX_FACTOR;
+  const restore = () => {
+    if (SAVED === undefined) delete process.env.ROUTE_MAX_FACTOR;
+    else process.env.ROUTE_MAX_FACTOR = SAVED;
+  };
+
+  it('sane Austin→Dallas route kept, 2258km blowup dropped', () => {
+    restore();
+    expect(isPlausibleRoute(300_000, AUSTIN, DALLAS)).toBe(true);
+    expect(isPlausibleRoute(2_258_000, AUSTIN, DALLAS)).toBe(false);
+  });
+
+  it('short-trip floor: sub-5km routes kept even at 0 straight-line distance', () => {
+    restore();
+    expect(isPlausibleRoute(800, AUSTIN, AUSTIN)).toBe(true);
+    expect(isPlausibleRoute(100_000, AUSTIN, AUSTIN)).toBe(false);
+  });
+
+  it('non-numeric distances never plausible', () => {
+    restore();
+    for (const d of [NaN, Infinity, -1, undefined as never]) {
+      expect(isPlausibleRoute(d, AUSTIN, DALLAS)).toBe(false);
+    }
+  });
+
+  it('ROUTE_MAX_FACTOR env widens the gate', () => {
+    process.env.ROUTE_MAX_FACTOR = '100';
+    try {
+      expect(isPlausibleRoute(2_258_000, AUSTIN, DALLAS)).toBe(true);
+    } finally {
+      restore();
+    }
+  });
+
+  it('length-aware default: 4km hop gets 8x, 293km haul gets 4x', () => {
+    restore();
+    const hop = { lat: 30.3, lon: -97.7 }; // ~5.5km from AUSTIN → 8x gate ≈44km
+    expect(isPlausibleRoute(20_000, AUSTIN, hop)).toBe(true);
+    expect(isPlausibleRoute(60_000, AUSTIN, hop)).toBe(false);
+    expect(isPlausibleRoute(1_100_000, AUSTIN, DALLAS)).toBe(true);
+    expect(isPlausibleRoute(1_300_000, AUSTIN, DALLAS)).toBe(false);
   });
 });

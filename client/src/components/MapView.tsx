@@ -66,7 +66,21 @@ function reducedMotion(): boolean {
 
 function emitBounds(m: maplibregl.Map, fn: (b: BBox) => void) {
   const b = m.getBounds();
-  fn({ minLon: b.getWest(), minLat: b.getSouth(), maxLon: b.getEast(), maxLat: b.getNorth() });
+  // Normalize so world/US zoom-outs still produce a server-valid bbox:
+  // maplibre can report lng beyond ±180 when zoomed far out, which the
+  // cameras endpoint treats as empty. Clamp + keep min < max.
+  const clampLon = (v: number) => Math.min(180, Math.max(-180, v));
+  const clampLat = (v: number) => Math.min(85, Math.max(-85, v));
+  const w = clampLon(b.getWest());
+  const e = clampLon(b.getEast());
+  const s = clampLat(b.getSouth());
+  const n = clampLat(b.getNorth());
+  fn({
+    minLon: Math.min(w, e),
+    minLat: Math.min(s, n),
+    maxLon: Math.max(w, e),
+    maxLat: Math.max(s, n),
+  });
 }
 
 // Subtle 3D buildings when the Voyager style exposes a building source.
@@ -210,6 +224,20 @@ export default function MapView(props: MapViewProps) {
       bearing: 0,
     });
     m.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+    // Debounced bounds emission: rapid pan/zoom gestures settle into one
+    // onBoundsChange call, and the timer id doubles as stale suppression —
+    // only the latest viewport's bbox is ever emitted.
+    let boundsTimer: number | undefined;
+    const scheduleBounds = () => {
+      window.clearTimeout(boundsTimer);
+      boundsTimer = window.setTimeout(() => {
+        try {
+          emitBounds(m, onBoundsRef.current);
+        } catch {
+          /* bounds read must never break the map */
+        }
+      }, 200);
+    };
     m.on('click', (e: maplibregl.MapMouseEvent) => {
       const p = { lat: e.lngLat.lat, lon: e.lngLat.lng };
       if ((e.originalEvent as MouseEvent).altKey) {
@@ -225,13 +253,22 @@ export default function MapView(props: MapViewProps) {
         onDestRef.current(p);
       }
     });
-    m.on('moveend', () => emitBounds(m, onBoundsRef.current));
-    m.on('load', () => tryAddBuildings(m));
+    m.on('moveend', scheduleBounds);
+    // moveend covers most pan/zoom gestures, but a wheel-zoom that never
+    // starts a "move" (or a programmatic zoom) may only fire zoomend —
+    // funnel both into the same debounced emitter so every viewport,
+    // from street to full-US, triggers a cameras fetch in App.
+    m.on('zoomend', scheduleBounds);
+    m.on('load', () => {
+      tryAddBuildings(m);
+      scheduleBounds();
+    });
     tryAddBuildings(m);
     mapRef.current = m;
     setMap(m);
     emitBounds(m, onBoundsRef.current);
     return () => {
+      window.clearTimeout(boundsTimer);
       m.remove();
       mapRef.current = null;
     };

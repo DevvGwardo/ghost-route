@@ -1,0 +1,16 @@
+# Self-hosted OSRM routing for ghost-route. 100% free/open, no paid services.
+# Pairs with scripts/setup-routing-selfhost.sh, which populates ./osrm-data.
+# OSRM exposes no /health endpoint, so no healthcheck is defined here on
+# purpose (rather than probing a route like /nearest and faking one).
+services:
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend
+    command: osrm-routed --algorithm mld /data/region.osrm
+    volumes:
+      - ./osrm-data:/data
+    ports:
+      # Loopback only — never expose the routing engine to the LAN/internet.
+      - "127.0.0.1:5000:5000"
+    restart: unless-stopped
+    # Example only (uncomment to pin a version):
+    # image: ghcr.io/project-osrm/osrm-backend:v5.27.1

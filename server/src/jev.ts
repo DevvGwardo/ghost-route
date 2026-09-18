@@ -8,12 +8,25 @@ export interface RankInput {
   distanceM: number;
   durationS: number;
   exposureCount: number;
+  /** Combined geometric seen-risk 0..1 (computed pre-rank when available). */
+  exposurePGeo?: number;
+  /** Steps with exposureP > 0.1 — tells Jev where risk concentrates. */
+  highRiskSteps?: number;
+  cameraIds?: string[];
+}
+
+export interface JevTradeoff {
+  savedExposures: number;
+  extraSeconds: number;
+  extraMeters: number;
 }
 
 export interface Verdict {
   choice: string;
   confidence: number;
   fallbackUsed: boolean;
+  rationale?: string;
+  tradeoff?: JevTradeoff;
 }
 
 export interface RankResult {
@@ -94,12 +107,57 @@ function heuristicBest(routes: RankInput[]): RankInput {
   return [...routes].sort((a, b) => a.score - b.score)[0];
 }
 
+function buildTradeoff(winner: RankInput, routes: RankInput[]): JevTradeoff {
+  let fastest = winner;
+  let maxExposure = winner.exposureCount;
+  for (const r of routes) {
+    if (r.durationS < fastest.durationS) fastest = r;
+    if (r.exposureCount > maxExposure) maxExposure = r.exposureCount;
+  }
+  return {
+    savedExposures: Math.max(0, maxExposure - winner.exposureCount),
+    extraSeconds: Math.max(0, Math.round(winner.durationS - fastest.durationS)),
+    extraMeters: Math.max(0, Math.round(winner.distanceM - fastest.distanceM)),
+  };
+}
+
+function fmtMins(sec: number): string {
+  const m = Math.round(sec / 60);
+  return m <= 0 ? "<1 min" : `${m} min`;
+}
+
+function buildFallbackRationale(winner: RankInput, routes: RankInput[]): string {
+  const t = buildTradeoff(winner, routes);
+  const risk =
+    typeof winner.exposurePGeo === "number"
+      ? ` Seen risk ${Math.round(winner.exposurePGeo * 100)}%.`
+      : "";
+  const riskSteps =
+    typeof winner.highRiskSteps === "number" && winner.highRiskSteps > 0
+      ? ` ${winner.highRiskSteps} high-risk turn${winner.highRiskSteps === 1 ? "" : "s"}.`
+      : "";
+  if (t.savedExposures <= 0 && t.extraSeconds <= 0)
+    return `Fewest cameras and fastest: ${winner.exposureCount} exposure${winner.exposureCount === 1 ? "" : "s"}.${risk}${riskSteps}`;
+  if (t.savedExposures <= 0)
+    return `Fastest route at ${winner.exposureCount} exposure${winner.exposureCount === 1 ? "" : "s"}.${risk}`;
+  return `Avoids ${t.savedExposures} camera${t.savedExposures === 1 ? "" : "s"} vs most-exposed option${t.extraSeconds > 0 ? `, +${fmtMins(t.extraSeconds)} vs fastest` : " at no extra time"}.${risk}${riskSteps}`;
+}
+
+function sanitizeRationale(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const s = v.trim().replace(/\s+/g, " ");
+  if (!s) return undefined;
+  return s.length > 280 ? s.slice(0, 277) + "…" : s;
+}
+
 function fallbackResult(routes: RankInput[], confidence: number, apiKey?: string): RankResult {
   const best = heuristicBest(routes);
   const rankedIds = [...routes].sort((a, b) => a.score - b.score).map((r) => r.id);
+  const tradeoff = buildTradeoff(best, routes);
+  const rationale = buildFallbackRationale(best, routes);
   const verdicts: Record<string, Verdict> = {};
   for (const r of routes)
-    verdicts[r.id] = { choice: best.id, confidence, fallbackUsed: true };
+    verdicts[r.id] = { choice: best.id, confidence, fallbackUsed: true, rationale, tradeoff };
   return { rankedIds, verdicts, mode: jevMode(apiKey) };
 }
 
@@ -229,10 +287,15 @@ export async function rankRoutes(
           {
             type: "choice",
             question:
-              "Which route should the driver take? Minimize Flock camera exposure first, then travel time.",
+              "Which route should the driver take? Minimize Flock camera exposure first, then travel time. Each option carries exposureCount, geometric seen-risk exposureP (0..1), highRiskSteps (turns with >10% step risk), durationS and distanceM. Prefer fewer cameras even at modest time cost; the tradeoff matters.",
             options: routes.map((r) => ({
               id: r.id,
               exposureCount: r.exposureCount,
+              exposureP:
+                typeof r.exposurePGeo === "number"
+                  ? Math.round(r.exposurePGeo * 1000) / 1000
+                  : undefined,
+              highRiskSteps: r.highRiskSteps ?? undefined,
               durationS: r.durationS,
               distanceM: r.distanceM,
             })),
@@ -247,6 +310,10 @@ export async function rankRoutes(
       decision?: string;
       selectedId?: string;
       confidence?: number;
+      rationale?: unknown;
+      reasoning?: unknown;
+      explanation?: unknown;
+      reason?: unknown;
     };
     const choice = data.choice ?? data.decision ?? data.selectedId;
     const confidence = Number(data.confidence ?? 0);
@@ -258,9 +325,17 @@ export async function rankRoutes(
       .filter((r) => r.id !== choice)
       .sort((a, b) => a.score - b.score)
       .map((r) => r.id);
+    const winner = routes.find((r) => r.id === choice) ?? heuristicBest(routes);
+    const tradeoff = buildTradeoff(winner, routes);
+    const rationale =
+      sanitizeRationale(data.rationale) ??
+      sanitizeRationale(data.reasoning) ??
+      sanitizeRationale(data.explanation) ??
+      sanitizeRationale(data.reason) ??
+      buildFallbackRationale(winner, routes);
     const verdicts: Record<string, Verdict> = {};
     for (const r of routes)
-      verdicts[r.id] = { choice, confidence, fallbackUsed: false };
+      verdicts[r.id] = { choice, confidence, fallbackUsed: false, rationale, tradeoff };
     return { rankedIds: [choice, ...rest], verdicts, mode: "jev" };
   } catch {
     return fallbackResult(routes, 0.9, opts?.apiKey);
