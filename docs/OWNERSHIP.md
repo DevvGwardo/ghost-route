@@ -12,7 +12,7 @@ Mirrors `PROJECT_BRIEF.md` §50-64. Brief is authoritative on conflicts; this do
 - **test:** `tests/*.test.ts`, `tests/helpers.ts`
 - **debug:** `server/src/avoid.ts`, `scripts/repro-avoid.mjs`
 - **security:** `server/src/security.ts`, `.env.example`
-- **perf:** `server/src/cache.ts`, `client/src/hooks/*.ts`
+- **perf:** `server/src/cache.ts`
 - **orchestrator only:** `package.json`, `server/package.json`, `client/package.json`, `*/tsconfig.json`, `client/vite.config.ts`
 
 ## 2. Proposed adjustment (one)

@@ -9,14 +9,12 @@
     "preview": "vite preview --port 5174"
   },
   "dependencies": {
-    "leaflet": "^1.9.4",
     "lucide-react": "^1.47.0",
     "maplibre-gl": "^6.10.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/leaflet": "^1.9.12",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",

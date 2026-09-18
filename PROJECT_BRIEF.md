@@ -16,6 +16,10 @@ TypeSafe Jev (`system_one` choice head) with a deterministic fallback when no
 - `POST /api/route` body
   `{ origin:{lat,lon}, destination:{lat,lon}, avoidFlock?:boolean=true, bufferMeters?:number=150 }`
   → `{ routes:[{ id:string, coordinates:[[lat,lon],...], distanceM:number, durationS:number, exposures:[{cameraId:string,lat:number,lon:number,distM:number}], exposureCount:number, score:number, jev:{ choice:string, confidence:number, fallbackUsed:boolean } }], rankedBy:'jev'|'heuristic', jevMode:'jev'|'fake' }`
+- Additive (v1.1, shapes above unchanged):
+  `GET /api/system/status` → `{ mode, threshold, cameraCount, osrm }`;
+  `GET /api/system/verify` (header `x-typesafe-key`) → `{ mode, valid, confidence?, error? }`
+  where `error` is `key-required` | `unauthorized` | `unreachable`. Never echoes the key.
 
 ## Jev integration (server/src/jev.ts owned by backend)
 
@@ -38,7 +42,7 @@ perpendicular, re-query OSRM) and re-score. Haversine for distances.
 Seed from deflock.me (crowd-sourced Flock map) + synthetic Austin TX cluster
 for offline tests. Import script `scripts/import-deflock.mjs` re-runnable.
 
-## Client (Vite + React 18 + plain Leaflet, NO react-leaflet)
+## Client (Vite + React 18 + MapLibre GL)
 
 - `MapView.tsx`: Leaflet map, OSM tiles, click sets origin/dest.
 - `SearchBar.tsx`: Nominatim geocode.
@@ -58,7 +62,7 @@ for offline tests. Import script `scripts/import-deflock.mjs` re-runnable.
 - test: `tests/*.test.ts`, `tests/helpers.ts`
 - debug: `server/src/avoid.ts`, `scripts/repro-avoid.mjs`
 - security: `server/src/security.ts`, `.env.example`
-- perf: `server/src/cache.ts`, `client/src/hooks/*.ts`
+- perf: `server/src/cache.ts`
 - orchestrator (me): `package.json`, `server/package.json`,
   `client/package.json`, `*/tsconfig.json`, `client/vite.config.ts` — crew must
   NOT edit these; missing deps go in your report, I install them.
