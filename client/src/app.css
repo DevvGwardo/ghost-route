@@ -295,12 +295,27 @@ button {
   background: #f1f3f4;
 }
 
-.gm-suggest-label {
+.gm-suggest-text {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gm-suggest-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.gm-suggest-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  color: var(--gm-muted);
 }
 
 .gm-suggest-icon {
@@ -552,7 +567,9 @@ button {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  column-gap: 12px;
   border: none;
   background: transparent;
   text-align: left;
@@ -565,6 +582,7 @@ button {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .gm-duration {
@@ -588,8 +606,10 @@ button {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: 6px;
+  column-gap: 6px;
 }
 
 .gm-badge {

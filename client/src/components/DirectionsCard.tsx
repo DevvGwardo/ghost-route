@@ -33,6 +33,17 @@ interface NominatimResult {
   display_name: string;
 }
 
+// Nominatim display names are long ("Downtown, Austin, Travis County, Texas,
+// ..."). Split into a short primary line + muted remainder so rows stay
+// readable without horizontal clipping.
+function primaryLabel(displayName: string): string {
+  return displayName.split(',').slice(0, 2).join(',').trim();
+}
+
+function secondaryLabel(displayName: string): string {
+  return displayName.split(',').slice(2, 4).join(',').trim();
+}
+
 async function geocodeList(query: string, signal: AbortSignal): Promise<Suggestion[]> {
   const res = await fetch(
     `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`,
@@ -185,8 +196,11 @@ function PlaceField({ id, label, value, placeholder, icon, coordsLabel, onTextCh
                 <span className="gm-suggest-icon" aria-hidden="true">
                   <MapPin size={16} />
                 </span>
-                <span className="gm-suggest-label" title={s.label}>
-                  {s.label}
+                <span className="gm-suggest-text" title={s.label}>
+                  <span className="gm-suggest-label">{primaryLabel(s.label)}</span>
+                  {secondaryLabel(s.label) && (
+                    <span className="gm-suggest-sub">{secondaryLabel(s.label)}</span>
+                  )}
                 </span>
               </button>
             </li>
