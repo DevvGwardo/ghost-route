@@ -1,5 +1,9 @@
 # Ghost Route — Flock-camera-aware routing
 
+<p align="center">
+  <img src="docs/repo-banner.png" alt="Ghost Route banner" width="100%">
+</p>
+
 A Google-Maps-style web app for privacy navigation: it shows Flock Safety
 ALPR cameras near you and ranks driving routes by camera exposure, so you can
 take paths with the fewest (ideally zero) Flock cameras. Route ranking goes
@@ -48,6 +52,10 @@ building extrusions) whenever routes are shown; the Mountain/Box button toggles
 - `GET /api/system/verify` (header `x-typesafe-key`) → `{ mode, valid, confidence?, error? }`
 
 ## How avoidance works
+
+<p align="center">
+  <img src="docs/repo-architecture.png" alt="Ghost Route architecture" width="90%">
+</p>
 
 1. OSRM public demo returns up to 3 alternative road routes.
 2. Every route is scored: cameras within `bufferMeters` of the polyline dominate
