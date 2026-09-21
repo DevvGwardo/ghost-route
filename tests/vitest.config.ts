@@ -7,5 +7,7 @@ export default {
     include: ['**/*.test.ts'],
     environment: 'node',
     testTimeout: 60_000,
+    // Request-timing/log events would flood test output — off by default.
+    env: { GHOST_LOG: 'off' },
   },
 };

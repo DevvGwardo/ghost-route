@@ -1,0 +1,4 @@
+{"op":"add","camera":{"id":"cam-001","lat":30.2672,"lon":-97.7431,"source":"user","address":"scratch test","verified":false}}
+{"op":"add","camera":{"id":"cam-002","lat":48.8584,"lon":2.2945,"source":"user","address":"paris scratch","verified":false}}
+{"op":"delete","id":"cam-001"}
+{"op":"delete","id":"cam-002"}

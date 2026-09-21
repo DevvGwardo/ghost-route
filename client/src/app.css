@@ -133,6 +133,67 @@ button {
   background: var(--gm-red);
 }
 
+/* ---------- navigation markers (follow mode) ---------- */
+
+/* Live user position while navigating. */
+.gm-user-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gm-blue);
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.15),
+    0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Upcoming maneuver: an upward triangle marking the next turn. */
+.gm-next-turn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--gm-blue);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gm-next-turn::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid #fff;
+}
+
+/* Resume follow after the user pans away. Lives in the navigation banner row:
+   a map-positioned control would sit in the band the bottom sheet covers.
+   .gm-nav-voice shares the geometry for the voice-guidance toggle. */
+.gm-nav-recenter,
+.gm-nav-voice {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--gm-bg);
+  box-shadow: var(--gm-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--gm-blue);
+  transition: background 120ms ease;
+}
+
+.gm-nav-recenter:hover,
+.gm-nav-voice:hover {
+  background: #f8f9fa;
+}
+
 .maplibregl-popup-content {
   padding: 12px 14px;
   border-radius: 12px;
@@ -150,6 +211,8 @@ button {
   border-radius: var(--gm-radius);
   box-shadow: var(--gm-shadow);
   padding: 8px 8px 12px;
+  max-height: calc(100dvh - 220px);
+  overflow-y: auto;
 }
 
 .gm-directions-row {
@@ -205,6 +268,9 @@ button {
 
 .gm-field {
   position: relative;
+}
+
+.gm-field-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -230,7 +296,8 @@ button {
   min-width: 0;
   border: none;
   outline: none;
-  font-size: 15px;
+  /* 16px minimum: iOS Safari auto-zooms on focus below this. */
+  font-size: 16px;
   padding: 10px 0;
   color: var(--gm-text);
   background: transparent;
@@ -261,18 +328,15 @@ button {
   background: #f1f3f4;
 }
 
+/* In-flow suggestions: the list pushes card content down (inside the
+   already-scrolling topcard) instead of overlaying the destination field
+   and Find button — on narrow screens an overlay buries the controls. */
 .gm-suggest {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 30;
   margin: 0;
   padding: 4px 0;
   list-style: none;
   background: var(--gm-bg);
-  border-radius: 12px;
-  box-shadow: var(--gm-shadow);
+  border-top: 1px solid #e8eaed;
   max-height: 240px;
   overflow-y: auto;
 }
@@ -322,37 +386,6 @@ button {
   color: var(--gm-muted);
   flex-shrink: 0;
   display: flex;
-}
-
-/* ---------- transport tabs ---------- */
-
-.gm-modes {
-  display: flex;
-  gap: 4px;
-  padding: 8px 4px 4px;
-  border-top: 1px solid #e8eaed;
-  margin-top: 4px;
-}
-
-.gm-mode {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  padding: 8px 4px 6px;
-  cursor: pointer;
-  color: var(--gm-blue);
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.gm-mode.disabled {
-  color: #bdc1c6;
-  cursor: not-allowed;
 }
 
 /* ---------- route options ---------- */
@@ -448,8 +481,24 @@ button {
 }
 
 .gm-find-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.85;
   cursor: default;
+}
+
+.gm-find-btn:disabled::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  animation: gm-spin 800ms linear infinite;
+}
+
+@keyframes gm-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .gm-error {
@@ -512,6 +561,69 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ---------- navigation banner (replaces directions while navigating) ---------- */
+
+.gm-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 4px 8px;
+}
+
+.gm-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gm-nav-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--gm-chip);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.gm-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gm-blue);
+  flex-shrink: 0;
+}
+
+.gm-nav-text {
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gm-nav-wait {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gm-muted);
+  font-weight: 400;
+}
+
+.gm-nav-cam {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  background: var(--gm-amber-bg);
+  color: var(--gm-amber-text);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* ---------- bottom sheet ---------- */
@@ -802,7 +914,7 @@ button {
 
 .gm-step-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
   border-top: 1px solid #e8eaed;
@@ -830,10 +942,7 @@ button {
 
 .gm-step-text {
   font-size: 14px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow-wrap: break-word;
 }
 
 .gm-step-sub {
@@ -844,6 +953,7 @@ button {
 
 .gm-step-chip {
   flex-shrink: 0;
+  margin-top: 2px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -853,14 +963,6 @@ button {
   padding: 4px 10px;
   background: var(--gm-amber-bg);
   color: var(--gm-amber-text);
-  white-space: nowrap;
-}
-
-.gm-step-clear {
-  flex-shrink: 0;
-  font-size: 12px;
-  color: #9aa0a6;
-  padding: 4px 6px;
   white-space: nowrap;
 }
 
@@ -1013,6 +1115,18 @@ button {
   color: var(--gm-muted);
 }
 
+/* Narrow layout: the card and the bottom sheet share one column, so the card
+   must stop where the sheet begins. Without this the card used a fixed
+   max-height (100dvh - 220px) while an expanded sheet reached 62dvh, leaving
+   the controls at the bottom of the card — Find above all — permanently
+   BEHIND the sheet and unreachable at any scroll position. Scoping the card to
+   the space the sheet leaves makes its own scroll able to reveal them. */
+@media (max-width: 1023px) {
+  .gm-root.gm-sheet-open .gm-topcard {
+    max-height: calc(100dvh - 62dvh - 28px - env(safe-area-inset-top));
+  }
+}
+
 /* ---------- desktop: floating panel + card ---------- */
 
 @media (min-width: 1024px) {
@@ -1040,20 +1154,54 @@ button {
   .gm-fabs {
     right: 16px;
   }
+
+  .gm-3d-toggle {
+    right: 16px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .gm-find-btn,
   .gm-fab,
   .gm-3d-toggle,
+  .gm-nav-recenter,
+  .gm-nav-voice,
   .gm-route-card,
   .gm-sheet {
     transition: none;
   }
 
+  .gm-find-btn:disabled::after {
+    animation: none;
+  }
+
   .gm-skeleton-line {
     animation: none;
     opacity: 0.8;
+  }
+}
+
+/* ---------- touch targets (44px iOS / 48px Android guidance) ---------- */
+
+@media (pointer: coarse) {
+  .gm-back-btn,
+  .gm-swap-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .gm-field-clear {
+    width: 40px;
+    height: 40px;
+  }
+
+  .gm-suggest li button {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .gm-find-btn {
+    min-height: 48px;
   }
 }
 
@@ -1285,4 +1433,182 @@ button {
 
 .gm-duration {
   white-space: nowrap;
+}
+
+/* ---------- v1.2: travel mode, camera filters, recents, share ---------- */
+
+.gm-profile-row {
+  display: flex;
+  gap: 6px;
+  margin: 4px 12px 8px;
+}
+
+.gm-profile-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--gm-border);
+  background: var(--gm-bg);
+  color: var(--gm-muted);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.gm-profile-btn.on {
+  background: var(--gm-chip);
+  border-color: var(--gm-blue);
+  color: var(--gm-blue);
+  font-weight: 600;
+}
+
+.gm-field-star {
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #9aa0a6;
+  flex-shrink: 0;
+}
+
+.gm-field-star:hover {
+  background: #f1f3f4;
+}
+
+.gm-field-star.on {
+  color: #f9ab00;
+}
+
+.gm-options-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gm-muted);
+}
+
+.gm-brand-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gm-brand-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--gm-muted);
+}
+
+.gm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gm-chip {
+  border: 1px solid var(--gm-border);
+  background: var(--gm-bg);
+  color: var(--gm-text);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gm-chip.on {
+  background: var(--gm-chip);
+  border-color: var(--gm-blue);
+  color: var(--gm-blue);
+  font-weight: 600;
+}
+
+.gm-clean-banner.muted {
+  background: #f1f3f4;
+  color: var(--gm-muted);
+}
+
+.gm-detail-actions {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.gm-detail-actions .gm-empty-btn {
+  flex: 1;
+}
+
+.gm-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--gm-border);
+  background: var(--gm-bg);
+  color: var(--gm-text);
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.gm-share-btn:hover {
+  background: #f1f3f4;
+}
+
+/* Popup line marking a crowd-sourced (unverified) camera. */
+.gm-cam-unverified {
+  color: var(--gm-amber-text);
+  font-weight: 600;
+}
+
+/* Degraded-mode notice: in the top card's flow (see App.tsx). No absolute
+   positioning and no z-index games — it therefore cannot sit under, over, or
+   on top of any other control, which is exactly the failure mode an overlay
+   here produced (its Dismiss click fell through to the sheet). */
+.gm-degraded {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 4px 8px;
+  background: var(--gm-amber-bg);
+  color: var(--gm-amber-text);
+  border-radius: 12px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.gm-degraded > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.gm-degraded-x {
+  margin-left: auto;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
 }

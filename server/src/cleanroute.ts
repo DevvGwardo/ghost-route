@@ -5,6 +5,7 @@ import {
   rankByExposure,
   minDistToPolyline,
   type Camera,
+  type ExposureOpts,
   type LatLon,
   type RankedRoute,
   type RouteInput,
@@ -14,6 +15,9 @@ export interface CleanStep {
   coordinates: [number, number][];
   cameraIds?: string[];
   exposureP?: number;
+  // Mirrors OSRM RouteStep extras carried through rankByExposure's spread.
+  roadName?: string;
+  maneuverKind?: string;
 }
 
 export type ScoredRoute = RankedRoute & { steps?: CleanStep[] };
@@ -37,6 +41,17 @@ export interface CleanRouteResult {
   osrmCalls: number;
   cleanFound: boolean;
   rounds: number;
+  /**
+   * Additive v1.2 (spec P2-1): true when the search stopped at the caller's
+   * `deadlineMs` instead of running out of rounds. Partial results are still
+   * returned — a bounded answer beats an unbounded wait.
+   */
+  aborted: boolean;
+}
+
+/** Wall-clock ceiling for the search, computed by the caller (route budget). */
+export interface CleanSearchDeadline {
+  deadlineMs: number;
 }
 
 const ROUND_RADII_M = [500, 1000, 2000];
@@ -62,6 +77,66 @@ function withViaTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 
 const EARTH_M = 6371000;
 const DEG = Math.PI / 180;
+
+/** Haversine distance between two [lat, lon] points, in meters. */
+function havM(a: [number, number], b: [number, number]): number {
+  const dLat = (b[0] - a[0]) * DEG;
+  const dLon = (b[1] - a[1]) * DEG;
+  const s1 = Math.sin(dLat / 2) ** 2;
+  const s2 =
+    Math.cos(a[0] * DEG) * Math.cos(b[0] * DEG) * Math.sin(dLon / 2) ** 2;
+  return 2 * EARTH_M * Math.asin(Math.sqrt(Math.min(1, s1 + s2)));
+}
+
+function polyLenM(coords: [number, number][], from: number, to: number): number {
+  let sum = 0;
+  for (let i = from; i < to; i++) sum += havM(coords[i], coords[i + 1]);
+  return sum;
+}
+
+/** Full polyline length in meters (exported for step-metric scaling). */
+export function routeLenM(coords: [number, number][]): number {
+  return polyLenM(coords, 0, Math.max(0, coords.length - 1));
+}
+
+// OSRM via routes sometimes contain an out-and-back spur: the via point
+// snaps to a dead-end (driveway, side road), so OSRM drives off the main
+// road to the via and back on the same line. On the map this renders as a
+// Y-branch stub. Detect loops where the path wanders far but ends near its
+// start (path >> endpoint distance) and splice the excursion out, keeping
+// one copy of the junction point. Returns the cleaned polyline plus the
+// removed spur length in meters (for distance/duration adjustment).
+export function stripBacktrackSpur(coords: [number, number][]): {
+  coordinates: [number, number][];
+  removedM: number;
+} {
+  const out = [...coords];
+  let removedM = 0;
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const n = out.length;
+    for (let i = 0; i < n; i++) {
+      for (let j = Math.min(n - 1, i + 12); j > i + 1; j--) {
+        // Never collapse the whole route into its endpoints.
+        if (i === 0 && j === n - 1) continue;
+        const endDist = havM(out[i], out[j]);
+        if (endDist > 25) continue;
+        const path = polyLenM(out, i, j);
+        // Excursion only: the driven path must dwarf the endpoint gap
+        // (a normal curve has path ~= endpoint distance) and be non-trivial.
+        if (path < 3 * endDist || path < 50) continue;
+        removedM += path - endDist;
+        out.splice(i + 1, j - i);
+        changed = true;
+        break;
+      }
+      if (changed) break;
+    }
+  }
+  if (out.length < 2) return { coordinates: [...coords], removedM: 0 };
+  return { coordinates: out, removedM };
+}
 
 /** Perpendicular offset from a step polyline's midpoint (sign sets the side). */
 function stepPerpOffset(coords: [number, number][], offsetM: number): LatLon {
@@ -95,8 +170,10 @@ function asCleanSteps(steps: unknown): CleanStep[] | undefined {
     if (!Array.isArray(coords) || coords.length === 0) continue;
     const cams = (s as { cameraIds?: unknown }).cameraIds;
     const p = (s as { exposureP?: unknown }).exposureP;
+    // Via-spur cleanup so per-step exposure never scores the dead-end stub.
+    const stripped = stripBacktrackSpur(coords as [number, number][]);
     out.push({
-      coordinates: coords as [number, number][],
+      coordinates: stripped.coordinates,
       ...(Array.isArray(cams) ? { cameraIds: cams as string[] } : {}),
       ...(typeof p === 'number' ? { exposureP: p } : {}),
     });
@@ -144,10 +221,15 @@ export async function searchCleanRoute(
   cameras: Camera[],
   bufferMeters: number,
   fetchRoutes: FetchRoutes,
+  // Direction-aware scoring must match the base scoring, or a "clean" detour
+  // would be judged by different rules than the routes it competes with.
+  opts?: ExposureOpts,
+  deadline?: CleanSearchDeadline,
 ): Promise<CleanRouteResult> {
   let attempts = 0;
   let osrmCalls = 0;
   let rounds = 0;
+  let aborted = false;
   const routes: ScoredRoute[] = [...baseScored].sort(compare);
   const done = (): CleanRouteResult => ({
     routes,
@@ -155,7 +237,10 @@ export async function searchCleanRoute(
     osrmCalls,
     cleanFound: routes.some((r) => r.exposureCount === 0),
     rounds,
+    aborted,
   });
+  const remainingMs = (): number =>
+    deadline ? deadline.deadlineMs - Date.now() : Number.POSITIVE_INFINITY;
   if (routes.length === 0 || routes[0].exposureCount === 0) return done();
 
   const baseDist = Math.min(...routes.map((r) => r.distanceM));
@@ -167,14 +252,24 @@ export async function searchCleanRoute(
 
   type Fetched = Awaited<ReturnType<FetchRoutes>>;
   for (let round = 0; round < maxRounds; round++) {
+    // Out of wall clock: keep whatever we already have (the caller surfaces
+    // `aborted` rather than pretending the search found nothing).
+    if (remainingMs() <= 0) {
+      aborted = true;
+      break;
+    }
     const focus = worstStepCoords(routes[0]);
     if (!focus || focus.length === 0) break;
     const radius = ROUND_RADII_M[Math.min(round, ROUND_RADII_M.length - 1)];
     const vias = [stepPerpOffset(focus, radius), stepPerpOffset(focus, -radius)];
     rounds += 1;
+    const roundTimeoutMs = Math.max(
+      250,
+      Math.min(viaTimeoutMs, remainingMs() || viaTimeoutMs),
+    );
     const settled: Array<{ ok: boolean; val: Fetched }> = await Promise.all(
       vias.map((via) =>
-        withViaTimeout(fetchRoutes(origin, destination, via), viaTimeoutMs).then(
+        withViaTimeout(fetchRoutes(origin, destination, via), roundTimeoutMs).then(
           (val): { ok: boolean; val: Fetched } => ({ ok: true, val }),
           (): { ok: boolean; val: Fetched } => ({ ok: false, val: [] }),
         ),
@@ -189,24 +284,62 @@ export async function searchCleanRoute(
       for (const raw of s.val) {
         if (!Array.isArray(raw.coordinates) || raw.coordinates.length === 0) continue;
         const id = `clean-r${rounds}-${detourId++}`;
+        // Via-spur repair: OSRM drives out-and-back when the via snaps to a
+        // dead-end. Splice the stub so the map shows one clean line, and
+        // discount the spur length from distance/duration (pro-rata).
+        const spur = stripBacktrackSpur(raw.coordinates);
+        const rawDist = Number(raw.distanceM) || 0;
+        const rawDur = Number(raw.durationS) || 0;
+        const fixedDist =
+          spur.removedM > 0 && rawDist > 0
+            ? Math.max(0, rawDist - spur.removedM)
+            : rawDist;
+        const fixedDur =
+          spur.removedM > 0 && rawDist > 0
+            ? (rawDur * fixedDist) / rawDist
+            : rawDur;
         const base: RouteInput = {
           id,
-          coordinates: raw.coordinates,
-          distanceM: raw.distanceM,
-          durationS: raw.durationS,
+          coordinates: spur.coordinates,
+          distanceM: fixedDist,
+          durationS: fixedDur,
         };
+        // Same spur repair inside per-step geometries (turn-by-turn geometry
+        // and per-step distances must match the rendered line).
+        let fixedSteps: unknown = raw.steps;
+        if (Array.isArray(raw.steps)) {
+          fixedSteps = (raw.steps as Array<Record<string, unknown>>).map((s) => {
+            const sc = s?.coordinates;
+            if (!s || typeof s !== 'object' || !Array.isArray(sc) || sc.length === 0)
+              return s;
+            const stripped = stripBacktrackSpur(sc as [number, number][]);
+            if (!(stripped.removedM > 0)) return s;
+            const stepLen = routeLenM(sc as [number, number][]);
+            const scale = stepLen > 0 ? Math.max(0, (stepLen - stripped.removedM) / stepLen) : 1;
+            return {
+              ...s,
+              coordinates: stripped.coordinates,
+              ...(typeof s.distanceM === 'number'
+                ? { distanceM: (s.distanceM as number) * scale }
+                : {}),
+              ...(typeof s.durationS === 'number'
+                ? { durationS: (s.durationS as number) * scale }
+                : {}),
+            };
+          });
+        }
         // Carry full OSRM steps through scoring so turn-by-turn survives;
         // rankByExposure spreads extras onto its output.
         newcomers.push(
-          raw.steps !== undefined ? { ...base, steps: raw.steps } : base,
+          fixedSteps !== undefined ? { ...base, steps: fixedSteps } : base,
         );
-        if (raw.steps !== undefined) fullSteps.add(id);
-        const cs = asCleanSteps(raw.steps);
+        if (fixedSteps !== undefined) fullSteps.add(id);
+        const cs = asCleanSteps(fixedSteps);
         if (cs) stepsById.set(id, cs);
       }
     }
     if (newcomers.length === 0) break;
-    const scored = rankByExposure(newcomers, cameras, bufferMeters);
+    const scored = rankByExposure(newcomers, cameras, bufferMeters, opts);
     attempts += scored.length;
     const within = scored.filter((r) => r.distanceM <= budget);
     if (within.length === 0) break;

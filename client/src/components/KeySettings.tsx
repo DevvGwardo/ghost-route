@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { KeyRound } from 'lucide-react';
-import { verifySystemKey } from '../lib/api';
+import { Eye, EyeOff, KeyRound } from 'lucide-react';
+import { ApiError, verifySystemKey } from '../lib/api';
+import { verifyMessage } from '../lib/verifyMessage';
 
 export const TYPESAFE_KEY_STORAGE = 'ghostroute.typesafeKey';
 
@@ -17,6 +18,7 @@ export default function KeySettings({ typesafeKey, onKeyChange, keyValid, onKeyV
   const [draft, setDraft] = useState(typesafeKey);
   const [error, setError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [showKey, setShowKey] = useState(false);
   const saved = typesafeKey.length > 0;
 
   // Keep draft in sync when key changes externally (clear, storage restore).
@@ -58,11 +60,19 @@ export default function KeySettings({ typesafeKey, onKeyChange, keyValid, onKeyV
         if (key !== typesafeKey) onKeyChange(key);
       } else {
         onKeyValidChange(false);
-        setError(out.error === 'unauthorized' ? 'Key rejected (401/403). Check typesafe.ai.' : 'Could not reach TypeSafe. Try again.');
+        setError(verifyMessage(out));
       }
-    } catch {
+    } catch (err) {
       onKeyValidChange(false);
-      setError('Verify failed — server unreachable.');
+      // This catch is about the Ghost Route server, not TypeSafe — say so
+      // precisely. A 429 here is our own limiter, which is not "unreachable".
+      if (err instanceof ApiError && err.status === 429) {
+        setError('Too many key checks right now. Wait a minute, then Test again.');
+      } else if (err instanceof ApiError && err.status === 400) {
+        setError('Paste a key first, then Test.');
+      } else {
+        setError('Could not reach the Ghost Route server. Is it running?');
+      }
     } finally {
       setVerifying(false);
     }
@@ -77,7 +87,7 @@ export default function KeySettings({ typesafeKey, onKeyChange, keyValid, onKeyV
       <div className="gm-key-row">
         <input
           id="gr-jev-key"
-          type="password"
+          type={showKey ? 'text' : 'password'}
           autoComplete="off"
           spellCheck={false}
           placeholder="Paste your key"
@@ -97,6 +107,16 @@ export default function KeySettings({ typesafeKey, onKeyChange, keyValid, onKeyV
             }
           }}
         />
+        <button
+          type="button"
+          className="gm-key-clear"
+          aria-label={showKey ? 'Hide key' : 'Show key'}
+          aria-pressed={showKey}
+          title={showKey ? 'Hide key' : 'Show key'}
+          onClick={() => setShowKey((v) => !v)}
+        >
+          {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
         <button type="button" className="gm-key-save" aria-label="Save TypeSafe key" onClick={save}>
           Save
         </button>

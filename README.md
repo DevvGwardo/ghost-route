@@ -6,7 +6,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D20-339933" alt="Node 20+">
   <img src="https://img.shields.io/badge/stack-TypeScript%20%C2%B7%20React%20%C2%B7%20Express-3178c6" alt="TypeScript, React, Express">
-  <img src="https://img.shields.io/badge/tests-110%2F110-brightgreen" alt="110 of 110 tests passing">
+  <img src="https://img.shields.io/badge/tests-353%2F353-brightgreen" alt="208 of 208 tests passing">
 </p>
 
 <p align="center">
@@ -23,6 +23,9 @@ Flock Safety ALPR cameras log every passing plate. Ghost Route makes that exposu
 | 🛣️ | **Ranked routes** — up to 5 candidates scored by exposure first, drive time second |
 | 🧠 | **JEV ranking + heuristic fallback** — TypeSafe `system_one` choice head live, deterministic scoring offline |
 | 👁️ | **Seen-risk meter** — probability of being observed by ≥1 camera, per route and per turn |
+| 🧭 | **Follow-mode navigation** — the map tracks your GPS and heading, marks the next turn, highlights cameras ahead, and reroutes from your live position if you leave the route |
+| 🔊 | **Voice guidance** — opt-in spoken maneuvers, camera alerts, reroute and arrival cues (banner speaker toggle) |
+| ↗️ | **Direction-aware exposure** — cameras with a known facing only count when you actually travel through their bearing |
 | 🔑 | **BYOK** — paste your key in the app, no server config needed |
 | 📦 | **Self-hostable** — one repo, two processes, no vendor lock-in |
 
@@ -55,6 +58,26 @@ Open the UI, click the map to set origin then destination (Alt-click restarts), 
 3. **Detours** — if every alternative is exposed, two waypoint-detour candidates (±1000 m perpendicular offsets) are re-routed via OSRM and re-scored.
 4. **Ranking** — Jev picks the winner; below `CONFIDENCE_THRESHOLD` (default `0.40`) the heuristic best is served instead, flagged `fallbackUsed: true`.
 
+Most `141,000+` camera nodes carry a facing (`direction`), and a camera only counts when your route actually travels through the way it points (~±60°). A camera facing west does not penalise an eastbound street. Pass `respectDirection: false` to score every camera omnidirectionally, as before.
+
+## Route options
+
+Open **Route options** under the From/To fields:
+
+| Option | Default | Effect |
+|---|---|---|
+| **Drive / Walk / Bike** | Drive | OSRM travel profile. A backend with no graph for the mode returns driving directions and says so. |
+| **Avoid Flock cameras** | on | Off = score routes by cameras present (no detour search), so you can compare the exposure of the direct path. The sheet then reads "Camera avoidance is off" rather than pretending no clean route exists. |
+| **Buffer radius** | 150 m | How far from the polyline a camera still counts (50–5000 m, matching the server). Wider = more conservative avoidance, longer detours. |
+| **Only count cameras facing the route** | on | Off restores the fully omnidirectional model (every camera in the buffer counts). |
+| **Verified cameras only** | off | On = user-submitted (unverified) nodes no longer affect the route. Off keeps every camera counted. |
+| **Brands** | all | Chips derived from the cameras currently in view; selecting any narrows routing to those brands. |
+| **JEV key** | none | BYOK key for AI ranking; everything works without it. |
+
+Every one of these is also a `POST /api/route` field (`profile`, `cameraFilter`, `respectDirection`, …) and every addition is optional — old clients keep working unchanged. Options apply on the next **Find clean route**; changing them never silently re-routes. Preferences persist in `localStorage`, and the current route is continuously written to the URL hash (`#r=lat,lon~lat,lon&prof=…`) so the address bar is a shareable link — **Share** copies it, and opening one hydrates the endpoints and options on boot.
+
+Recent trips and starred places are offered right in the From/To fields (browser-only; nothing about your trips is stored server-side).
+
 ## Bring your own key
 
 Two ways to activate live JEV ranking (never required):
@@ -67,8 +90,9 @@ Precedence per request: `x-typesafe-key` header → `TYPESAFE_API_KEY` env → n
 <details>
 <summary>Troubleshooting a pasted key</summary>
 
-- `GET /api/system/verify` with the `x-typesafe-key` header returns `{ valid, confidence?, error? }` (`unauthorized` = 401/403 from TypeSafe, `unreachable` = network/timeout). The UI Test button calls this.
-- Routes showing `fallback` + `heuristic` mean the key was present but Jev was unreachable, low-confidence, or invalid — check Test output.
+- `GET /api/system/verify` with the `x-typesafe-key` header returns `{ valid, confidence?, error?, status?, detail? }`. The Test button calls this, and the error names the real cause: `unauthorized` (401/403), `invalid-request` (TypeSafe rejected the body, e.g. 422), `rate-limited` (429), `upstream-error` (5xx), `timeout` (TypeSafe was reachable but slow), `unreachable` (network only).
+- Keys are bearer tokens in the hundreds of characters; a 200-char cap used to drop real ones silently. Keys up to 4096 chars are accepted.
+- Routes showing `fallback` + `heuristic` mean the key was present but Jev was unreachable, timed out, was low-confidence, or invalid — check Test output. `429`/`529` from TypeSafe are retried once with backoff (within the request's budget).
 - `GET /api/system/status` shows `{ mode, threshold, cameraCount, osrm }` for the current key.
 
 </details>
@@ -76,10 +100,11 @@ Precedence per request: `x-typesafe-key` header → `TYPESAFE_API_KEY` env → n
 ## API
 
 - `GET /api/health` → `{ ok, jev: { mode: 'jev'|'fake', threshold } }`
-- `GET /api/cameras?bbox=minLon,minLat,maxLon,maxLat&limit=500`
-- `POST /api/cameras` `{ lat, lon, address? }` — crowd-source a camera
-- `POST /api/route` `{ origin, destination, avoidFlock=true, bufferMeters=150 }` → `{ routes, rankedBy, jevMode }`
-- `GET /api/system/status` → `{ mode, threshold, cameraCount, osrm }`
+- `GET /api/cameras?bbox=minLon,minLat,maxLon,maxLat&limit=500` (+ `verifiedOnly=1`, `brand=`, `source=`, applied before decimation)
+- `POST /api/cameras` `{ lat, lon, address? }` — crowd-source a camera (needs `x-camera-token` when `CAMERA_WRITE_TOKEN` is set)
+- `POST /api/cameras/:id/report` `{ reason }` → `{ camera, reports, reasons }`; `DELETE /api/cameras/:id` → `{ deleted }`
+- `POST /api/route` `{ origin, destination, avoidFlock=true, bufferMeters=150, respectDirection=true, profile='driving', cameraFilter? }` → `{ routes, rankedBy, jevMode, profile?, profileFallback?, cleanSearch }`
+- `GET /api/system/status` → `{ mode, threshold, cameraCount, cameraCounts, routingBackend, osrm }`
 - `GET /api/system/verify` (header `x-typesafe-key`) → `{ mode, valid, confidence?, error? }`
 
 ## Camera data
@@ -97,7 +122,10 @@ node scripts/repro-avoid.mjs                # avoidance proof: detour 3 → 0 ex
 
 - **Ports** — server `8801` (`PORT` in `.env`), client `5174`. In dev the Vite proxy forwards `/api`, so no extra config; for split deploys set `VITE_API_URL` before `npm run build -w client`.
 - **Privacy** — origin/destination are POSTed to the server (and to OSRM for routing). Self-host both if that matters to you; the TypeSafe key travels as a header and is never logged or persisted server-side.
-- **Production hardening** (defaults are local-dev grade) — restrict CORS origins in `server/src/index.ts`, put auth in front of `POST /api/cameras`, note rate limits + camera store are in-memory (single instance), and switch routing off the OSRM demo (`ROUTING_BACKEND=fosssgis`, or self-host + `ROUTING_BACKEND=custom`) plus Nominatim with hosted instances before real traffic.
+- **Budgets and caching** — `ROUTE_BUDGET_MS` (12000) caps the clean-route search, `JEV_BUDGET_MS` (10000) is the shared ranking+exposure deadline, `JEV_CACHE_TTL_MS` (60000, `0` disables) caches JEV answers per identical candidate set. A cut-short search still returns routes and flags `cleanSearch.aborted`.
+- **Camera writes** — set `CAMERA_WRITE_TOKEN` to require `x-camera-token` on `POST /api/cameras`, `POST /api/cameras/:id/report` and `DELETE /api/cameras/:id`. Unset is open (dev default). Accepted nodes land in an append-only journal (`CAMERA_USER_FILE`); the shipped seed (`CAMERA_DATA_FILE`) is read-only and never rewritten.
+- **Logging** — one JSON line per finished request plus route summary/error events on stdout (`GHOST_LOG=off` silences). No coordinates, keys, or bodies are ever logged.
+- **Production hardening** (defaults are local-dev grade) — restrict CORS origins in `server/src/index.ts`, set `CAMERA_WRITE_TOKEN`, note rate limits are in-memory (single instance; the camera store swaps behind the `Store` interface), and switch routing off the OSRM demo (`ROUTING_BACKEND=fosssgis`, or self-host + `ROUTING_BACKEND=custom`) plus Nominatim with hosted instances before real traffic.
 
 ## Attribution
 

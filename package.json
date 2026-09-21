@@ -9,7 +9,8 @@
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w shared && npm run build -w server && npm run build -w client",
     "test": "vitest run --root tests",
-    "typecheck": "npx tsc --noEmit -p server && npx tsc --noEmit -p client && npx tsc --noEmit -p shared"
+    "verify:nav": "node scripts/verify-nav-browser.mjs",
+    "typecheck": "npx tsc --noEmit -p shared && npx tsc --noEmit -p server && npx tsc --noEmit -p client"
   },
   "devDependencies": {
     "typescript": "^5.6.3",

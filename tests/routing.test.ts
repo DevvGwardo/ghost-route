@@ -44,6 +44,7 @@ describe('resolveRoutingBackend', () => {
     expect(resolveRoutingBackend()).toEqual({
       name: 'demo',
       origin: 'https://router.project-osrm.org',
+      routePath: '/route/v1/driving',
     });
   });
 
@@ -57,13 +58,23 @@ describe('resolveRoutingBackend', () => {
     expect(resolveRoutingBackend()).toEqual({
       name: 'fosssgis',
       origin: 'https://routing.openstreetmap.de',
+      routePath: '/routed-car/route/v1/driving',
     });
+  });
+
+  it('fosssgis routePath differs from demo routePath', () => {
+    const demo = resolveRoutingBackend({ ...process.env, ROUTING_BACKEND: 'demo' });
+    process.env.ROUTING_BACKEND = 'fosssgis';
+    const fosssgis = resolveRoutingBackend();
+    expect(demo.routePath).toBe('/route/v1/driving');
+    expect(fosssgis.routePath).toBe('/routed-car/route/v1/driving');
+    expect(fosssgis.routePath).not.toBe(demo.routePath);
   });
 
   it('custom with valid https base (path/query stripped)', () => {
     process.env.ROUTING_BACKEND = 'custom';
     process.env.OSRM_BASE = 'https://routes.example.com/prefix?token=x';
-    expect(resolveRoutingBackend()).toEqual({ name: 'custom', origin: 'https://routes.example.com' });
+    expect(resolveRoutingBackend()).toEqual({ name: 'custom', origin: 'https://routes.example.com', routePath: '/route/v1/driving' });
   });
 
   it.each([['missing base'], ['garbage', '::://'], ['plain http', 'http://routes.example.com'], [
@@ -113,6 +124,12 @@ describe('fetchRoutes backend fallback', () => {
     expect(routes[0].distanceM).toBe(5000);
     expect(seen.some((u) => u.includes('routing.openstreetmap.de'))).toBe(true);
     expect(seen.some((u) => u.includes('router.project-osrm.org'))).toBe(true);
+    // P0 regression pin: fosssgis serves under /routed-car/, bare /route/v1 404s.
+    expect(
+      seen.some((u) => u.includes('routing.openstreetmap.de/routed-car/route/v1/driving')),
+    ).toBe(true);
+    expect(seen.find((u) => u.includes('routing.openstreetmap.de'))).toContain('/routed-car/route/v1/driving/');
+    expect(seen.find((u) => u.includes('router.project-osrm.org'))).toContain('/route/v1/driving/');
   });
 
   it('demo primary down → throws (no chained fallback)', async () => {

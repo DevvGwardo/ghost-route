@@ -4,7 +4,7 @@
 //   → { routes, attempts, osrmCalls, cleanFound, rounds }
 // fetchRoutes is ALWAYS stubbed here (no network). fetchRoutes(o, d, via?) → RouteInput[].
 import { describe, it, expect } from 'vitest';
-import { searchCleanRoute } from '../server/src/cleanroute';
+import { searchCleanRoute, stripBacktrackSpur } from '../server/src/cleanroute';
 import { AUSTIN, makeCamera, makeRoute, straightCoords, startServer, fetchJson } from './helpers';
 
 const DEST = { lat: 30.35, lon: -97.7 };
@@ -130,6 +130,42 @@ describe('searchCleanRoute', () => {
       if (saved === undefined) delete process.env.CLEAN_VIA_TIMEOUT_MS;
       else process.env.CLEAN_VIA_TIMEOUT_MS = saved;
     }
+  });
+
+  it('via route with out-and-back spur → spur spliced, distance discounted', async () => {
+    // Synthetic OSRM via artifact: straight line with a dead-end excursion
+    // (p5 → tip → p5) like a via snapped off-road. Must render as one line.
+    const line = straightCoords(AUSTIN, DEST, 11);
+    const tip: [number, number] = [line[5][0] + 0.005, line[5][1]];
+    const spurred: [number, number][] = [...line.slice(0, 6), tip, ...line.slice(5)];
+    expect(spurred).toHaveLength(13);
+    const fetchRoutes = async (o: any, d: any, via?: any) => {
+      if (!via) return [{ ...makeRoute('refetch', o, d, 11) }];
+      return [{ ...makeRoute('spur', o, d, 13), coordinates: spurred, distanceM: 11_000, durationS: 990 }];
+    };
+    const r = await searchCleanRoute(AUSTIN, DEST, exposedBase(), [], BUFFER_M, fetchRoutes);
+    const fixed = r.routes.find((x) => x.id.startsWith('clean-'));
+    expect(fixed).toBeDefined();
+    expect(fixed!.coordinates).toHaveLength(11);
+    expect(fixed!.distanceM).toBeLessThan(11_000);
+  });
+});
+
+describe('stripBacktrackSpur', () => {
+  it('straight line passes through untouched', () => {
+    const line = straightCoords(AUSTIN, DEST, 21);
+    const out = stripBacktrackSpur(line);
+    expect(out.coordinates).toHaveLength(21);
+    expect(out.removedM).toBe(0);
+  });
+
+  it('exact retrace is spliced out', () => {
+    const line = straightCoords(AUSTIN, DEST, 11);
+    const tip: [number, number] = [line[5][0] + 0.005, line[5][1]];
+    const spurred: [number, number][] = [...line.slice(0, 6), tip, ...line.slice(5)];
+    const out = stripBacktrackSpur(spurred);
+    expect(out.coordinates).toHaveLength(11);
+    expect(out.removedM).toBeGreaterThan(500);
   });
 });
 

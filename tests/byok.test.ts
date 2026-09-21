@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeAll, afterAll } from 'vitest';
-import { rankRoutes, estimateExposure } from '../server/src/jev';
+import { rankRoutes, estimateExposure, MAX_KEY_LENGTH } from '../server/src/jev';
 import { AUSTIN, makeRoute, startServer, fetchJson } from './helpers';
 
 // BYOK key precedence — offline-safe. Never hits the real TypeSafe API:
@@ -24,7 +24,7 @@ async function resolveKeyFn(): Promise<(provided?: unknown) => string> {
   const fn = (mod as Record<string, unknown>).resolveKey;
   expect(
     fn,
-    'resolveKey not implemented yet (backend pending: export function resolveKey(provided?: string): string — trim, empty→env, >200 chars ignored, else env or "")',
+    'resolveKey not implemented yet (backend pending: export function resolveKey(provided?: string): string — trim, blank→env, a provided key wins even when long, >MAX_KEY_LENGTH refused)',
   ).toBeTypeOf('function');
   return fn as (provided?: unknown) => string;
 }
@@ -53,13 +53,28 @@ describe('byok resolveKey precedence (no network)', () => {
     expect(resolveKey(undefined)).toBe('env-key');
   });
 
-  it('>200-char provided is ignored (falls back to env, or "" without env)', async () => {
+  // Regression: real TypeSafe keys are bearer tokens (in practice JWTs of
+  // several hundred characters). The old 200-char cap dropped them silently,
+  // which surfaced to users as "could not reach TypeSafe".
+  it('a JWT-sized provided key is used as-is (not dropped)', async () => {
     const resolveKey = await resolveKeyFn();
-    const long = 'x'.repeat(201);
+    const jwtish = 'x'.repeat(400);
     process.env.TYPESAFE_API_KEY = 'env-key';
-    expect(resolveKey(long)).toBe('env-key');
+    expect(resolveKey(jwtish)).toBe(jwtish);
     delete process.env.TYPESAFE_API_KEY;
-    expect(resolveKey(long)).toBe('');
+    expect(resolveKey(jwtish)).toBe(jwtish);
+  });
+
+  it('an absurdly long provided key is refused rather than swapped for the env key', async () => {
+    const resolveKey = await resolveKeyFn();
+    const absurd = 'x'.repeat(MAX_KEY_LENGTH + 1);
+    process.env.TYPESAFE_API_KEY = 'env-key';
+    // Substituting the operator's key here would verify/rank with a DIFFERENT
+    // key than the user supplied — worse than not using one at all.
+    expect(resolveKey(absurd)).toBe('');
+    // The env key itself still works (and is bounds-checked too).
+    expect(resolveKey(undefined)).toBe('env-key');
+    expect(resolveKey('')).toBe('env-key');
   });
 
   it("no provided + no env → ''", async () => {

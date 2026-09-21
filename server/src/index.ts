@@ -3,10 +3,25 @@ import cors from "cors";
 import { fileURLToPath } from "node:url";
 import { healthPayload } from "./routes/system.js";
 import { apiLimiter, routeLimiter, cameraWriteLimiter, noKeyLeak } from "./security.js";
+import { logEvent } from "./logger.js";
 
 export const app = express();
 
 app.set("trust proxy", 1);
+// Request timing: one JSON line per finished request (spec P3). Path only —
+// query strings and bodies never reach the log.
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    logEvent("http_request", {
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      ms: Date.now() - start,
+    });
+  });
+  next();
+});
 app.use(cors());
 app.use(apiLimiter);
 app.use("/api/route", routeLimiter);

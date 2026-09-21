@@ -1,5 +1,6 @@
 // Typed fetch client for the Ghost Route v1 API contract. No React imports.
 import type {
+  BBox,
   ByokOpts,
   Camera,
   CamerasResponse,
@@ -26,6 +27,11 @@ export class ApiError extends Error {
   }
 }
 
+/** BYOK key plus cancellation. `signal` aborts an in-flight request. */
+export interface ReqOpts extends ByokOpts {
+  signal?: AbortSignal;
+}
+
 function baseUrl(): string {
   const envBase =
     typeof import.meta !== 'undefined' &&
@@ -34,16 +40,29 @@ function baseUrl(): string {
   return '';
 }
 
-async function req<T>(path: string, init?: RequestInit, opts?: ByokOpts): Promise<T> {
+/**
+ * True when `err` is an aborted request rather than a real failure. Aborts are
+ * deliberately re-thrown untouched by `req` (not folded into ApiError(0)), so
+ * callers can tell "superseded by newer intent" apart from "network is down"
+ * and avoid clobbering the newer request's UI state.
+ */
+export function isAbortError(err: unknown): boolean {
+  return err instanceof Error && err.name === 'AbortError';
+}
+
+async function req<T>(path: string, init?: RequestInit, opts?: ReqOpts): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (opts?.typesafeKey) headers['x-typesafe-key'] = opts.typesafeKey;
   let res: Response;
   try {
     res = await fetch(`${baseUrl()}${path}`, {
       ...init,
+      ...(opts?.signal ? { signal: opts.signal } : {}),
       headers: { ...headers, ...((init?.headers as Record<string, string>) ?? {}) },
     });
   } catch (err) {
+    // Preserve abort identity; everything else becomes a network-shaped error.
+    if (isAbortError(err)) throw err;
     throw new ApiError(0, null, err instanceof Error ? err.message : 'network-error');
   }
   let body: unknown = null;
@@ -62,18 +81,11 @@ async function req<T>(path: string, init?: RequestInit, opts?: ByokOpts): Promis
   return body as T;
 }
 
-export interface Bbox {
-  minLon: number;
-  minLat: number;
-  maxLon: number;
-  maxLat: number;
-}
-
-export function getHealth(opts?: ByokOpts): Promise<HealthResponse> {
+export function getHealth(opts?: ReqOpts): Promise<HealthResponse> {
   return req<HealthResponse>('/api/health', undefined, opts);
 }
 
-export function getSystemStatus(opts?: ByokOpts): Promise<SystemStatusResponse> {
+export function getSystemStatus(opts?: ReqOpts): Promise<SystemStatusResponse> {
   return req<SystemStatusResponse>('/api/system/status', undefined, opts);
 }
 
@@ -81,12 +93,12 @@ export function verifySystemKey(typesafeKey: string): Promise<VerifyKeyResponse>
   return req<VerifyKeyResponse>('/api/system/verify', undefined, { typesafeKey });
 }
 
-export function getCameras(bbox: Bbox, limit = 500): Promise<CamerasResponse> {
+export function getCameras(bbox: BBox, limit = 500, opts?: ReqOpts): Promise<CamerasResponse> {
   const q = `bbox=${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}&limit=${limit}`;
-  return req<CamerasResponse>(`/api/cameras?${q}`);
+  return req<CamerasResponse>(`/api/cameras?${q}`, undefined, opts);
 }
 
-export function postRoute(routeReq: RouteRequest, opts?: ByokOpts): Promise<RouteResponse> {
+export function postRoute(routeReq: RouteRequest, opts?: ReqOpts): Promise<RouteResponse> {
   return req<RouteResponse>(
     '/api/route',
     {
@@ -109,6 +121,7 @@ export function postCamera(input: {
 }
 
 export type {
+  BBox,
   ByokOpts,
   Camera,
   JevExposure,

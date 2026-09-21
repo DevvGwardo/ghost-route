@@ -1,4 +1,7 @@
+import { timingSafeEqual } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
+
+export type TravelProfile = "driving" | "walking" | "cycling";
 
 const WINDOW_MS = 60_000;
 
@@ -47,6 +50,41 @@ export function __resetLimiters(): void {
   for (const b of limiterBuckets) b.clear();
 }
 
+function constantTimeEqual(a: string, b: string): boolean {
+  const ba = Buffer.from(a, "utf8");
+  const bb = Buffer.from(b, "utf8");
+  if (ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
+}
+
+/**
+ * Write-token guard for crowd-sourced camera mutations (additive v1.2,
+ * spec P1-5).
+ *
+ * - `CAMERA_WRITE_TOKEN` unset  → endpoint stays open (documented dev default).
+ * - set                         → `x-camera-token` must match, else 401.
+ *
+ * Compared in constant time so the token can't be probed a byte at a time.
+ */
+export function requireCameraWriteToken(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const expected = (process.env.CAMERA_WRITE_TOKEN ?? "").trim();
+  if (!expected) {
+    next();
+    return;
+  }
+  const raw = req.header("x-camera-token");
+  const given = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+  if (!given || !constantTimeEqual(given, expected)) {
+    res.status(401).json({ error: "camera-token-required" });
+    return;
+  }
+  next();
+}
+
 // Redact anything key-like before it reaches a 500 body.
 const KEY_LIKE =
   /(sk-[A-Za-z0-9_-]{8,}|rk_[A-Za-z0-9_-]{8,}|typesafe[_-]?api[_-]?key\s*[:=]\s*['"]?[A-Za-z0-9._-]{8,}['"]?|api[_-]?key\s*[:=]\s*['"]?[A-Za-z0-9._-]{8,}['"]?)/gi;
@@ -71,6 +109,28 @@ const ROUTING_PRESETS = {
   demo: "https://router.project-osrm.org",
   fosssgis: "https://routing.openstreetmap.de",
 } as const;
+
+// profile → OSRM path segment. The public demo instance serves one profile
+// per segment under /route/v1/; FOSSGIS prefixes each profile with its own
+// router. Custom/self-hosted OSRM is built per-profile, so driving is assumed.
+const DEMO_SEGMENT: Record<TravelProfile, string> = {
+  driving: "driving",
+  walking: "foot",
+  cycling: "bike",
+};
+const FOSSGIS_SEGMENT: Record<TravelProfile, string> = {
+  driving: "/routed-car/route/v1/driving",
+  walking: "/routed-foot/route/v1/foot",
+  cycling: "/routed-bike/route/v1/bike",
+};
+
+/** Route path for a backend name + travel profile (additive v1.2). */
+export function routePathFor(backend: string, profile: TravelProfile): string {
+  const p: TravelProfile =
+    profile === "walking" || profile === "cycling" ? profile : "driving";
+  if (backend === "fosssgis") return FOSSGIS_SEGMENT[p];
+  return `/route/v1/${DEMO_SEGMENT[p]}`;
+}
 
 // Cloud metadata endpoint — never a legitimate routing backend.
 const METADATA_IP = "169.254.169.254";
@@ -106,6 +166,8 @@ export interface RoutingBackend {
   name: string;
   /** https origin (no path, no credentials). */
   origin: string;
+  /** route path under the origin (FOSSGIS serves routing under /routed-car). */
+  routePath: string;
 }
 
 /**
@@ -115,14 +177,22 @@ export interface RoutingBackend {
  */
 export function resolveRoutingBackend(
   env: Record<string, string | undefined> = process.env,
+  profile: TravelProfile = "driving",
 ): RoutingBackend {
   const preset = (env.ROUTING_BACKEND ?? "demo").trim().toLowerCase();
-  if (preset === "fosssgis") return { name: "fosssgis", origin: ROUTING_PRESETS.fosssgis };
+  if (preset === "fosssgis")
+    return {
+      name: "fosssgis",
+      origin: ROUTING_PRESETS.fosssgis,
+      routePath: routePathFor("fosssgis", profile),
+    };
   if (preset === "custom") {
     const origin = customRoutingOrigin(env.OSRM_BASE, env.ALLOW_LOCAL_ROUTING === "1");
-    if (origin) return { name: "custom", origin };
+    // A custom OSRM is built for one profile; walking/cycling would 404, so
+    // the operator's driving router is used for every profile.
+    if (origin) return { name: "custom", origin, routePath: "/route/v1/driving" };
   }
-  return { name: "demo", origin: ROUTING_PRESETS.demo };
+  return { name: "demo", origin: ROUTING_PRESETS.demo, routePath: routePathFor("demo", profile) };
 }
 
 /**

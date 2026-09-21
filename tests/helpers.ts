@@ -21,8 +21,16 @@ export function straightCoords(
   return pts;
 }
 
-export function makeCamera(id: string, lat: number, lon: number) {
-  return { id, lat, lon, source: 'test', verified: true };
+export function makeCamera(id: string, lat: number, lon: number, direction?: number) {
+  return {
+    id,
+    lat,
+    lon,
+    source: 'test',
+    verified: true,
+    // Absent = omnidirectional (the pre-v1.2 behavior).
+    ...(typeof direction === 'number' ? { direction } : {}),
+  };
 }
 
 export function makeRoute(

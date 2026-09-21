@@ -1,16 +1,10 @@
 import { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
+import type { Camera } from '../../../shared/src/types';
 
-// Local minimal interface (do not import cross-agent files).
-export interface CameraPoint {
-  id: string;
-  lat: number;
-  lon: number;
-  source?: string;
-  address?: string;
-  verified: boolean;
-}
+// Contract-derived: the layer renders exactly what the API returns.
+export type CameraPoint = Camera;
 
 interface CameraLayerProps {
   map: maplibregl.Map | null;
@@ -41,16 +35,24 @@ function esc(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
+// Unverified (crowd-sourced) nodes render in amber and say so in plain words:
+// a user submission must never look as authoritative as the verified dataset.
+const VERIFIED_COLOR = '#d93025';
+const UNVERIFIED_COLOR = '#b06000';
+
 function popupHtml(c: CameraPoint): string {
   const addr = c.address ? `<div>${esc(c.address)}</div>` : '';
   const source = c.source ? `<div class="gm-cam-meta">Source: ${esc(c.source)}</div>` : '';
+  const brand = esc(c.brand || 'ALPR');
+  const verification = c.verified
+    ? `<div class="gm-cam-meta">Verified record</div>`
+    : `<div class="gm-cam-meta gm-cam-unverified">Unverified — user submitted</div>`;
   return (
     `<div class="gm-cam-popup">` +
     `<div class="gm-cam-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" ` +
     `stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ` +
     `aria-hidden="true"><path d="M16.75 12h3.632a1 1 0 0 1 .894 1.447l-2.416 4.667a1 1 0 0 1-.894.553H15.5"/><path d="m2 15 3.349-3.349a1 1 0 0 1 .707-.293H15.5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H6.056a1 1 0 0 1-.707-.293L2 15Z"/><path d="M2 15v3a1 1 0 0 0 1 1h2"/><circle cx="8" cy="15" r="1.5"/></svg>` +
-    `<span>Flock camera</span></div>${addr}${source}` +
-    `<div class="gm-cam-meta">Verified: ${c.verified ? 'yes' : 'no'}</div></div>`
+    `<span>${brand} camera</span></div>${addr}${source}${verification}</div>`
   );
 }
 
@@ -96,8 +98,9 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
             lat: e.lngLat.lat,
             lon: e.lngLat.lng,
             address: props.address || undefined,
-            source: props.source || undefined,
+            source: props.source ?? '',
             verified: props.verified === 'yes',
+            brand: props.brand || undefined,
           }),
         )
         .addTo(map);
@@ -168,6 +171,7 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
               address: c.address ?? '',
               source: c.source ?? '',
               verified: c.verified ? 'yes' : 'no',
+              brand: c.brand ?? '',
             },
             geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
           })),
@@ -182,7 +186,13 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
             // texture, not a red blob); full size/opacity up close.
             'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2.5, 10, 4, 13, 6],
             'circle-opacity': ['interpolate', ['linear'], ['zoom'], 5, 0.55, 12, 0.95],
-            'circle-color': '#d93025',
+            'circle-color': [
+              'match',
+              ['get', 'verified'],
+              'yes',
+              VERIFIED_COLOR,
+              UNVERIFIED_COLOR,
+            ],
             'circle-stroke-color': '#ffffff',
             'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 5, 0, 10, 1.5],
           },

@@ -1,14 +1,40 @@
 import { Router } from 'express';
-import { fetchRoutes } from '../services/osrm.js';
+import { fetchRoutes, fetchRoutesFor, type RoutingAttempt } from '../services/osrm.js';
 import { rankByExposure } from '../avoid.js';
 import { searchCleanRoute } from '../cleanroute.js';
-import { rankRoutes, estimateExposure } from '../jev.js';
+import { confidenceThreshold } from '../jev.js';
+import { deterministicBundle, rankAndEstimate, type JevBundle } from '../jevCache.js';
 import { scoreRoute, exposurePForPoints, isPlausibleRoute } from '../services/scoring.js';
-import { camerasInBbox } from '../store.js';
+import { camerasInBbox, type CameraQueryFilter } from '../store.js';
+import { logEvent } from '../logger.js';
+import type { TravelProfile } from '../security.js';
 
 const router = Router();
 
-const MAX_COORDS = 2000;
+const MAX_COORDS = 4000;
+const DEFAULT_ROUTE_BUDGET_MS = 12_000;
+
+/**
+ * Overall wall-clock ceiling for one route request's clean-route search
+ * (additive v1.2, spec P2-1). A bounded partial answer beats an unbounded
+ * wait; `cleanSearch.aborted` tells the client the search was cut short.
+ */
+function routeBudgetMs(): number {
+  const v = Number(process.env.ROUTE_BUDGET_MS);
+  if (!Number.isFinite(v)) return DEFAULT_ROUTE_BUDGET_MS;
+  return Math.min(60_000, Math.max(500, Math.floor(v)));
+}
+
+/** Clean-route summary as returned in the response envelope. */
+interface CleanSearch {
+  cleanFound: boolean;
+  rounds: number;
+  osrmCalls: number;
+  attempts?: number;
+  detourRatio?: number;
+  aborted?: boolean;
+  skipped?: 'avoid-disabled';
+}
 
 // Lifetime observability for the plausibility guard (surfaced on
 // GET /api/system/status). Plain counters — no PII, no per-request data.
@@ -79,6 +105,7 @@ function isLatLon(v: unknown): v is { lat: number; lon: number } {
 // POST / { origin, destination, avoidFlock=true, bufferMeters=150 }
 // (mounted at /api/route by index.ts)
 router.post('/', async (req, res) => {
+  const startedAt = Date.now();
   const { origin, destination } = req.body ?? {};
   if (!isLatLon(origin) || !isLatLon(destination)) {
     res.status(400).json({ error: 'origin-destination-required' });
@@ -104,18 +131,70 @@ router.post('/', async (req, res) => {
     bufferMeters = b;
   }
 
+  // Direction-aware exposure (additive v1.2). When a camera carries a known
+  // `direction`, it only counts if the route travels through that bearing.
+  // Cameras without a direction are unaffected. Default on.
+  let respectDirection = true;
+  if (req.body.respectDirection !== undefined) {
+    if (typeof req.body.respectDirection !== 'boolean') {
+      res.status(400).json({ error: 'respectDirection-invalid' });
+      return;
+    }
+    respectDirection = req.body.respectDirection;
+  }
+
+  // Travel profile (additive v1.2). Unknown values are rejected rather than
+  // silently coerced — a typo'd profile should not quietly become "driving".
+  let profile: TravelProfile = 'driving';
+  if (req.body.profile !== undefined) {
+    const p = req.body.profile;
+    if (p !== 'driving' && p !== 'walking' && p !== 'cycling') {
+      res.status(400).json({ error: 'profile-invalid' });
+      return;
+    }
+    profile = p;
+  }
+
+  // Camera filter (additive v1.2). Split in two: `storeFilter` narrows the
+  // candidate set before scoring; `maxDistM` is a hard distance ceiling the
+  // scoring passes apply.
+  const parsedFilter = parseCameraFilter(req.body.cameraFilter);
+  if (!parsedFilter.ok) {
+    res.status(400).json({ error: 'cameraFilter-invalid' });
+    return;
+  }
+  const { storeFilter, maxDistM } = parsedFilter;
+
+  const exposureOpts = {
+    respectDirection,
+    ...(maxDistM !== undefined ? { maxDistM } : {}),
+  };
+
+  const requestDeadline = Date.now() + routeBudgetMs();
+
   let baseRoutes: any[];
+  // The profile that actually served the base route, and whether we fell back
+  // to driving because this backend has no graph for the requested one.
+  let usedProfile: TravelProfile = profile;
+  let profileFallback = false;
   // BYOK: per-request user key (header > env > none); never log it.
   const headerVal = req.header('x-typesafe-key');
   const apiKey = (Array.isArray(headerVal) ? headerVal[0] : headerVal)?.trim() || undefined;
   try {
-    const base = await fetchPlausibleBase(origin, destination);
+    const base = await fetchPlausibleBase(origin, destination, async (o, d) => {
+      const attempt: RoutingAttempt = await fetchRoutesFor(o, d, undefined, profile);
+      usedProfile = attempt.profile;
+      profileFallback = attempt.degraded;
+      return attempt.routes;
+    });
     if (base.exhausted) {
+      logEvent('route_error', { reason: 'implausible-routes', ms: Date.now() - startedAt });
       res.status(502).json({ error: 'routing-unavailable', reason: 'implausible-routes' });
       return;
     }
     baseRoutes = base.routes;
   } catch {
+    logEvent('route_error', { reason: 'osrm-error', ms: Date.now() - startedAt });
     res.status(502).json({ error: 'routing-unavailable', reason: 'osrm-error' });
     return;
   }
@@ -154,17 +233,16 @@ router.post('/', async (req, res) => {
           Math.min(180, maxLon + padLon),
           Math.min(90, maxLat + padLat),
           2000,
+          storeFilter,
         ).filter((c) => isLatLon(c))
       : [];
 
   // Score by camera exposure (guarded: one corrupt row must not 500 the route).
   let scored: any[];
-  let cleanSearch:
-    | { cleanFound: boolean; rounds: number; osrmCalls: number; attempts?: number; detourRatio?: number }
-    | undefined;
+  let cleanSearch: CleanSearch | undefined;
   try {
     if (avoidFlock) {
-      scored = rankByExposure(baseRoutes, cameras, bufferMeters);
+      scored = rankByExposure(baseRoutes, cameras, bufferMeters, exposureOpts);
       if (
         Array.isArray(scored) &&
         scored.length > 0 &&
@@ -181,7 +259,12 @@ router.post('/', async (req, res) => {
             scored,
             cameras,
             bufferMeters,
-            async (o, d, v) => await fetchRoutes(o, d, v),
+            // Vias follow the profile that actually served the base route, so
+            // a driving fallback never mixes modes inside one plan.
+            async (o, d, v) =>
+              (await fetchRoutesFor(o, d, v, usedProfile)).routes,
+            exposureOpts,
+            { deadlineMs: requestDeadline },
           );
           if (result && Array.isArray(result.routes) && result.routes.length > 0) {
             scored = result.routes;
@@ -198,6 +281,7 @@ router.post('/', async (req, res) => {
               rounds: Number(result.rounds ?? 0),
               osrmCalls: Number(result.osrmCalls ?? 0) + 1,
               attempts: Number(result.attempts ?? 0),
+              ...(result.aborted ? { aborted: true } : {}),
               ...(Number.isFinite(baseMin) &&
               baseMin > 0 &&
               Number.isFinite(cleanMin)
@@ -219,13 +303,31 @@ router.post('/', async (req, res) => {
     } else {
       scored = baseRoutes.map((r: any) => ({
         ...r,
-        ...scoreRoute(r, cameras, bufferMeters),
+        ...scoreRoute(r, cameras, bufferMeters, exposureOpts),
       }));
     }
   } catch {
     res.status(500).json({ error: "route-scoring-failed" });
     return;
   }
+
+  // Edge-case sweep (spec P2-3): cleanSearch is ALWAYS described, so the UI
+  // never has to guess between "no search ran" and "search found nothing".
+  if (!cleanSearch) {
+    cleanSearch = avoidFlock
+      ? {
+          cleanFound: scored.some((r: any) => Number(r?.exposureCount ?? 0) === 0),
+          rounds: 0,
+          osrmCalls: 0,
+        }
+      : {
+          cleanFound: scored.some((r: any) => Number(r?.exposureCount ?? 0) === 0),
+          rounds: 0,
+          osrmCalls: 0,
+          skipped: 'avoid-disabled',
+        };
+  }
+
   // Turn-by-turn steps + geometric seen-risk, computed BEFORE Jev ranking
   // so Jev gets exposureP / high-risk-step counts as input. Never 500s.
   const STEP_CAP = 100;
@@ -241,6 +343,7 @@ router.post('/', async (req, res) => {
             s?.coordinates ?? [],
             cameras,
             bufferMeters,
+            exposureOpts,
           );
           const p =
             typeof res?.p === 'number' && Number.isFinite(res.p)
@@ -254,6 +357,13 @@ router.post('/', async (req, res) => {
             durationS: Number(s?.durationS ?? 0),
             exposureP: Math.round(p * 1000) / 1000,
             cameraIds: Array.isArray(res?.cameraIds) ? res.cameraIds : [],
+            // Step geometry for client-side navigation (locate-on-route).
+            // Additive: omitted when the backend didn't carry steps.
+            ...(Array.isArray(s?.coordinates) ? { coordinates: s.coordinates } : {}),
+            // Backend-enriched OSRM fields: pass through when present,
+            // omit when absent (never synthesize).
+            ...(typeof s?.roadName === 'string' && s.roadName ? { roadName: s.roadName } : {}),
+            ...(typeof s?.maneuverKind === 'string' && s.maneuverKind ? { maneuverKind: s.maneuverKind } : {}),
           };
         });
         const combined =
@@ -273,27 +383,37 @@ router.post('/', async (req, res) => {
     }
   }
 
-  // Jev ranking now receives geometric risk + step concentration data.
-  let jev: any;
+  // Jev ranking + exposure now share one cached, budgeted round-trip.
+  const jevInput = {
+    rank: scored.map((r: any) => ({
+      id: r?.id,
+      score: typeof r?.score === 'number' ? r.score : (r?.exposureCount ?? 0) * 10000 + (r?.distanceM ?? 0),
+      distanceM: Number(r?.distanceM ?? 0),
+      durationS: Number(r?.durationS ?? 0),
+      exposureCount: Number(r?.exposureCount ?? 0),
+      exposurePGeo: enrich.get(r?.id)?.exposureP ?? 0,
+      highRiskSteps: enrich.get(r?.id)?.highRiskSteps ?? 0,
+      cameraIds: Array.isArray((r as any)?.exposures)
+        ? (r as any).exposures.slice(0, 20).map((e: any) => String(e?.cameraId ?? ''))
+        : [],
+    })),
+    exposure: scored.map((r: any) => ({
+      id: r?.id,
+      exposurePGeo: enrich.get(r?.id)?.exposureP ?? 0,
+      exposureCount: r?.exposureCount ?? 0,
+      distanceM: r?.distanceM ?? 0,
+    })),
+  };
+  let bundle: JevBundle;
   try {
-    jev = await rankRoutes(
-      scored.map((r: any) => ({
-        id: r?.id,
-        score: typeof r?.score === 'number' ? r.score : (r?.exposureCount ?? 0) * 10000 + (r?.distanceM ?? 0),
-        distanceM: Number(r?.distanceM ?? 0),
-        durationS: Number(r?.durationS ?? 0),
-        exposureCount: Number(r?.exposureCount ?? 0),
-        exposurePGeo: enrich.get(r?.id)?.exposureP ?? 0,
-        highRiskSteps: enrich.get(r?.id)?.highRiskSteps ?? 0,
-        cameraIds: Array.isArray((r as any)?.exposures)
-          ? (r as any).exposures.slice(0, 20).map((e: any) => String(e?.cameraId ?? ''))
-          : [],
-      })),
-      { apiKey },
-    );
+    bundle = await rankAndEstimate(jevInput, {
+      ...(apiKey ? { apiKey } : {}),
+      threshold: confidenceThreshold(),
+    });
   } catch {
-    jev = undefined;
+    bundle = deterministicBundle(jevInput, apiKey);
   }
+  const jev = bundle.rank;
   const rankedIds: string[] = Array.isArray((jev as any)?.rankedIds)
     ? (jev as any).rankedIds
     : scored.map((r: any) => r?.id);
@@ -305,21 +425,7 @@ router.post('/', async (req, res) => {
 
   const order = new Map(rankedIds.map((id: string, i: number) => [id, i]));
 
-  let jevExposureById: Record<string, any> = {};
-  try {
-    jevExposureById =
-      (await estimateExposure(
-        scored.map((r: any) => ({
-          id: r?.id,
-          exposurePGeo: enrich.get(r?.id)?.exposureP ?? 0,
-          exposureCount: r?.exposureCount ?? 0,
-          distanceM: r?.distanceM ?? 0,
-        })),
-        { apiKey },
-      )) ?? {};
-  } catch {
-    jevExposureById = {};
-  }
+  const jevExposureById: Record<string, any> = bundle.exposure ?? {};
 
   const routes = [...scored]
     .sort(
@@ -334,8 +440,7 @@ router.post('/', async (req, res) => {
         verdictList.find((x: any) => x?.choice === r?.id);
       const e = enrich.get(r?.id) ?? { steps: [], exposureP: 0, highRiskSteps: 0 };
       const je =
-        (r?.id !== undefined ? jevExposureById[r.id] : undefined) ??
-        {
+        (r?.id !== undefined ? jevExposureById[r.id] : undefined) ?? {
           p: e.exposureP,
           confidence: 0,
           fallbackUsed: true,
@@ -365,14 +470,72 @@ router.post('/', async (req, res) => {
       };
     });
 
+  const rankedBy =
+    verdictList.some((v: any) => v?.fallbackUsed === false) ? 'jev' : 'heuristic';
+
+  // Structured summary (spec P3): outcome only — no coordinates, no key.
+  logEvent('route_request', {
+    profile: usedProfile,
+    ...(profileFallback ? { profileFallback: true } : {}),
+    routes: routes.length,
+    cleanFound: cleanSearch?.cleanFound ?? false,
+    ...(cleanSearch?.aborted ? { searchAborted: true } : {}),
+    rankedBy,
+    jevMode: mode,
+    ms: Date.now() - startedAt,
+  });
+
   res.json({
     routes,
-    rankedBy: verdictList.some((v: any) => v?.fallbackUsed === false)
-      ? "jev"
-      : "heuristic",
+    rankedBy,
     jevMode: mode,
-    ...(cleanSearch ? { cleanSearch } : {}),
+    profile: usedProfile,
+    ...(profileFallback ? { profileFallback: true } : {}),
+    cleanSearch,
   });
 });
+
+interface ParsedFilter {
+  ok: boolean;
+  storeFilter?: CameraQueryFilter;
+  maxDistM?: number;
+}
+
+/** Validate `cameraFilter` from an untrusted body. Non-strict fields are ignored. */
+function parseCameraFilter(v: unknown): ParsedFilter {
+  if (v === undefined) return { ok: true };
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return { ok: false };
+  const raw = v as Record<string, unknown>;
+  const storeFilter: CameraQueryFilter = {};
+
+  if (raw.verifiedOnly !== undefined) {
+    if (typeof raw.verifiedOnly !== 'boolean') return { ok: false };
+    storeFilter.verifiedOnly = raw.verifiedOnly;
+  }
+  for (const field of ['brands', 'sources'] as const) {
+    const value = raw[field];
+    if (value === undefined) continue;
+    if (!Array.isArray(value) || value.length > 20) return { ok: false };
+    if (value.some((s) => typeof s !== 'string' || s.length === 0 || s.length > 100)) {
+      return { ok: false };
+    }
+    storeFilter[field] = value as string[];
+  }
+
+  let maxDistM: number | undefined;
+  if (raw.maxDistM !== undefined) {
+    const n = raw.maxDistM;
+    if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0 || n > 20_000) {
+      return { ok: false };
+    }
+    maxDistM = n;
+  }
+
+  return {
+    ok: true,
+    ...(Object.keys(storeFilter).length > 0 ? { storeFilter } : {}),
+    ...(maxDistM !== undefined ? { maxDistM } : {}),
+  };
+}
 
 export default router;

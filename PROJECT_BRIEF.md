@@ -18,8 +18,61 @@ TypeSafe Jev (`system_one` choice head) with a deterministic fallback when no
   → `{ routes:[{ id:string, coordinates:[[lat,lon],...], distanceM:number, durationS:number, exposures:[{cameraId:string,lat:number,lon:number,distM:number}], exposureCount:number, score:number, jev:{ choice:string, confidence:number, fallbackUsed:boolean } }], rankedBy:'jev'|'heuristic', jevMode:'jev'|'fake' }`
 - Additive (v1.1, shapes above unchanged):
   `GET /api/system/status` → `{ mode, threshold, cameraCount, osrm }`;
-  `GET /api/system/verify` (header `x-typesafe-key`) → `{ mode, valid, confidence?, error? }`
-  where `error` is `key-required` | `unauthorized` | `unreachable`. Never echoes the key.
+  `GET /api/system/verify` (header `x-typesafe-key`) → `{ mode, valid, confidence?, error?, status?, detail? }`
+  where `error` is `key-required` | `invalid-key` | `unauthorized` | `invalid-request` |
+  `rate-limited` | `upstream-error` | `timeout` | `unreachable`. The kinds are
+  kept distinct so a rejected request, a slow call, and an unreachable host
+  are not all reported the same way; `status` carries the upstream HTTP code,
+  `detail` a key-scrubbed upstream message. Never echoes the key.
+- Additive (v1.2, shapes above unchanged): `POST /api/route` accepts
+  `respectDirection?:boolean` (default **true**). When true, a camera whose
+  `direction` (OSM convention: compass bearing the camera points at, 0=N) is
+  known only counts as an exposure when the route's travel heading where it
+  passes nearest that camera is within ~60° of it. Cameras without a
+  `direction` stay omnidirectional, so the legacy result is unchanged for
+  them; `respectDirection:false` restores the fully omnidirectional model.
+  Non-boolean → 400 `respectDirection-invalid`. Applies to base scoring,
+  clean-route search and per-step exposure alike.
+
+- Additive (v1.2, shapes above unchanged) — remaining fields:
+  - `POST /api/route` also accepts
+    `profile?:'driving'|'walking'|'cycling'` (default `driving`; anything else
+    → 400 `profile-invalid`) and
+    `cameraFilter?:{ verifiedOnly?:boolean, brands?:string[], sources?:string[], maxDistM?:number }`
+    (malformed → 400 `cameraFilter-invalid`). `maxDistM` is a hard distance
+    ceiling; `verifiedOnly`/`brands`/`sources` narrow the camera set **before**
+    scoring, so counts and the clean-route search see one consistent set.
+    Absent fields never restrict. A profile the backend has no graph for falls
+    back to driving and says so via `profileFallback:true` (routes are still a
+    200 — never a 502 for an unsupported mode).
+  - `POST /api/route` response gains optional `profile` (the profile that
+    actually served the routes), `profileFallback?:true`, and
+    `cleanSearch` is now **always** present:
+    `{ cleanFound, rounds, osrmCalls, attempts?, detourRatio?, aborted?, skipped? }`
+    where `skipped:'avoid-disabled'` means the search did not run
+    (`avoidFlock:false`) and `aborted:true` means it stopped at the
+    `ROUTE_BUDGET_MS` deadline with partial results.
+  - `GET /api/cameras?bbox=…` also accepts `verifiedOnly=1`, `brand=`, `source=`
+    (repeatable or comma-separated). Filters apply before decimation, so
+    `total`/`truncated` describe the filtered set. Response shape unchanged.
+  - `POST /api/cameras/:id/report` body `{ reason }` where reason ∈
+    `gone | not-a-camera | wrong-location | other` →
+    `{ camera, reports:number, reasons:Record<string,number> }`;
+    400 `reason-invalid` (+ `allowed[]`), 404 `camera-not-found`.
+  - `DELETE /api/cameras/:id` → `{ deleted:camera }`; 404 when absent.
+  - `POST /api/cameras` and both moderation endpoints require the
+    `x-camera-token` header when `CAMERA_WRITE_TOKEN` is set (401
+    `camera-token-required` otherwise compared in constant time). **Unset =
+    open**, which is the documented dev default.
+  - `GET /api/system/status` gains `cameraCounts:{ total, verified }` and
+    `routingBackend:'demo'|'fosssgis'|'custom'` (additive; `cameraCount` keeps
+    its meaning).
+
+  New server env knobs (all optional, all defaulted): `ROUTE_BUDGET_MS`
+  (12000, ceiling for the clean-route search), `JEV_BUDGET_MS` (10000, shared
+  ranking+exposure deadline), `JEV_CACHE_TTL_MS` (60000; `0` disables),
+  `CAMERA_DATA_FILE` (seed path, read-only), `CAMERA_USER_FILE` (append-only
+  user journal), `CAMERA_WRITE_TOKEN`.
 
 ## Jev integration (server/src/jev.ts owned by backend)
 
@@ -37,7 +90,7 @@ demo = public OSRM, fosssgis = higher-capacity public instance, custom =
 self-hosted origin via `OSRM_BASE`, validated, fails-safe-to-demo).
 Non-demo primaries fall back to demo once on hard failure; active backend on
 `GET /api/system/status`.
-`{base}/route/v1/driving/{lon,lat};{lon,lat}?overview=full&geometries=geojson&alternatives=3`
+`{origin}/<backend-path>/{lon,lat};{lon,lat}?overview=full&geometries=geojson&alternatives=3&steps=true` (`<backend-path>` = `/route/v1/driving`, fosssgis `/routed-car` prefix; instructions use refs/destinations + full step polylines, `roadName`/`maneuverKind` carried additively)
 Avoidance: score alternatives by cameras within `bufferMeters` of the polyline;
 base routes pass a plausibility gate first (length-aware multiple of
 straight-line distance; one refetch on transient garbage, then 502 with
@@ -55,6 +108,9 @@ for offline tests. Import script `scripts/import-deflock.mjs` re-runnable.
 
 ## Client (Vite + React 18 + MapLibre GL)
 
+- Navigation state (GPS watch, current step, off-route detection) lives in
+  `client/src/lib/useNavigation.ts` + `client/src/lib/useGeoPosition.ts` so the
+  banner and the map share one fix; `NavigateBanner.tsx` is presentational.
 - `MapView.tsx`: Leaflet map, OSM tiles, click sets origin/dest.
 - `DirectionsCard.tsx`: Photon geocode (free, no key; Nominatim fallback),
   route options, avoid toggle + buffer slider, BYOK key field.

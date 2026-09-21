@@ -1,40 +1,13 @@
-import { ChevronDown, ChevronUp, KeyRound, Navigation, ShieldAlert, ShieldCheck, TriangleAlert } from 'lucide-react';
-import TurnSteps, { type RouteStep } from './TurnSteps';
+import { ChevronDown, ChevronUp, KeyRound, Navigation, Share2, ShieldAlert, ShieldCheck, TriangleAlert } from 'lucide-react';
+import TurnSteps from './TurnSteps';
+import type { RouteResponse, ScoredRoute } from '../../../shared/src/types';
 
-interface SheetJev {
-  choice: string;
-  confidence: number;
-  fallbackUsed: boolean;
-  rationale?: string;
-  tradeoff?: { savedExposures: number; extraSeconds: number; extraMeters: number };
-}
-
-export interface SheetJevExposure {
-  p: number;
-  confidence: number;
-  fallbackUsed: boolean;
-  source: string;
-}
-
-export interface SheetRoute {
-  id: string;
-  distanceM: number;
-  durationS: number;
-  exposureCount: number;
-  isClean?: boolean;
-  jev: SheetJev;
-  steps?: RouteStep[];
-  exposureP?: number;
-  jevExposure?: SheetJevExposure;
-}
-
-export interface CleanSearch {
-  cleanFound: boolean;
-  rounds: number;
-  osrmCalls?: number;
-  attempts?: number;
-  detourRatio?: number | null;
-}
+// All contract-derived: the sheet renders exactly what /api/route returns.
+export type SheetJev = ScoredRoute['jev'];
+export type SheetJevExposure = ScoredRoute['jevExposure'];
+export type SheetRoute = ScoredRoute;
+/** Clean-search summary as returned in the response envelope. */
+export type CleanSearch = NonNullable<RouteResponse['cleanSearch']>;
 
 function fmtDetour(ratio?: number | null): string | null {
   if (ratio == null || !Number.isFinite(ratio) || ratio <= 0) return null;
@@ -55,6 +28,12 @@ interface RouteSheetProps {
   jevLive?: boolean;
   cleanSearch?: CleanSearch | null;
   onFind: () => void;
+  navigating?: boolean;
+  canNavigate?: boolean;
+  onToggleNavigate?: () => void;
+  /** Copies/shares a deep link for the current route. */
+  onShare?: () => void;
+  shareNotice?: string | null;
 }
 
 function fmtKm(m: number): string {
@@ -205,11 +184,23 @@ function JevWhy({ route, live }: { route: SheetRoute; live: boolean }) {
 }
 
 function CleanBanner({ search, total }: { search: CleanSearch; total: number }) {
+  // "Avoidance is off" must never read as "no clean route exists": the search
+  // did not run at all, and the server says so explicitly.
+  if (search.skipped === 'avoid-disabled') {
+    return (
+      <div className="gm-clean-banner muted" role="status">
+        <ShieldAlert size={16} aria-hidden="true" />
+        <span className="gm-clean-title">Camera avoidance is off</span>
+        <span className="gm-clean-meta">exposure shown, not avoided</span>
+      </div>
+    );
+  }
   if (search.cleanFound) {
     const meta: string[] = [];
     const detour = fmtDetour(search.detourRatio);
     if (detour) meta.push(detour);
     if (search.osrmCalls != null) meta.push(`${search.osrmCalls} checks`);
+    if (search.aborted) meta.push('search cut short by time budget');
     return (
       <div className="gm-clean-banner found" role="status">
         <ShieldCheck size={16} aria-hidden="true" />
@@ -222,7 +213,9 @@ function CleanBanner({ search, total }: { search: CleanSearch; total: number }) 
     <div className="gm-clean-banner miss" role="status">
       <ShieldAlert size={16} aria-hidden="true" />
       <span className="gm-clean-title">
-        No camera-free route{total > 0 ? ` — best of ${total} below` : ''}
+        {search.aborted
+          ? `Search cut short by time budget${total > 0 ? ` — best of ${total} below` : ''}`
+          : `No camera-free route${total > 0 ? ` — best of ${total} below` : ''}`}
       </span>
     </div>
   );
@@ -260,7 +253,7 @@ function CompareTable({ routes, selectedId }: { routes: SheetRoute[]; selectedId
 }
 
 export default function RouteSheet(props: RouteSheetProps) {
-  const { routes, selectedId, onSelect, loading, expanded, onToggle, rankedBy, jevMode, jevLive = false, cleanSearch = null, onFind } =
+  const { routes, selectedId, onSelect, loading, expanded, onToggle, rankedBy, jevMode, jevLive = false, cleanSearch = null, onFind, navigating = false, canNavigate = false, onToggleNavigate, onShare, shareNotice = null } =
     props;
   const best = routes.find((r) => r.id === selectedId) ?? routes[0] ?? null;
   const fastest = routes.reduce((m, r) => Math.min(m, r.durationS), Infinity);
@@ -340,7 +333,8 @@ export default function RouteSheet(props: RouteSheetProps) {
             )}
             <ol className="gm-route-list">
               {routes.map((r, i) => {
-                const clean = r.isClean === true || r.exposureCount === 0;
+                // Trust the server-derived flag — never recompute it here.
+                const clean = r.isClean === true;
                 return (
                   <li key={r.id}>
                     <button
@@ -369,6 +363,43 @@ export default function RouteSheet(props: RouteSheetProps) {
             <div className="gm-selected-detail">
               <SeenRiskRow route={best} />
               <JevWhy route={best} live={jevLive} />
+              <div className="gm-detail-actions">
+                {onToggleNavigate && (
+                  <button
+                    type="button"
+                    className="gm-empty-btn"
+                    aria-pressed={navigating}
+                    disabled={!navigating && !canNavigate}
+                    title={
+                      navigating
+                        ? 'Stop turn-by-turn navigation'
+                        : canNavigate
+                          ? 'Start turn-by-turn navigation with camera alerts'
+                          : 'Navigation needs a route with turn steps'
+                    }
+                    onClick={onToggleNavigate}
+                  >
+                    <Navigation size={16} />
+                    {navigating ? 'Stop navigation' : 'Navigate'}
+                  </button>
+                )}
+                {onShare && (
+                  <button
+                    type="button"
+                    className="gm-share-btn"
+                    title="Copy a shareable link to this route"
+                    onClick={onShare}
+                  >
+                    <Share2 size={16} />
+                    Share
+                  </button>
+                )}
+              </div>
+              {shareNotice && (
+                <p className="gm-sheet-meta" role="status">
+                  {shareNotice}
+                </p>
+              )}
               <CompareTable routes={routes} selectedId={selectedId} />
               <TurnSteps steps={best.steps} />
             </div>

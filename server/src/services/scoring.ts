@@ -7,6 +7,11 @@ export interface Camera {
   id: string;
   lat: number;
   lon: number;
+  /**
+   * OSM convention: compass bearing the camera points at (0 = north,
+   * clockwise). Absent/unknown = omnidirectional (always counts).
+   */
+  direction?: number;
 }
 
 export interface RouteGeom {
@@ -98,18 +103,119 @@ export function validateP(p: number): number {
   return Math.max(0, Math.min(1, p));
 }
 
+/** Half-angle window used when a camera's `direction` is known. */
+export const DEFAULT_DIR_TOLERANCE_DEG = 60;
+
+export interface ExposureOpts {
+  /**
+   * When true (default), a camera with a known `direction` only counts as an
+   * exposure when the route's travel heading where it passes nearest the
+   * camera is within `toleranceDeg` of that direction. Cameras without a
+   * known direction stay omnidirectional.
+   */
+  respectDirection?: boolean;
+  /** Half-angle window in degrees. Default 60, clamped to 0..180. */
+  toleranceDeg?: number;
+  /**
+   * Additive v1.2: ignore cameras farther than this from the route, even when
+   * they are inside the buffer. Absent = no ceiling.
+   */
+  maxDistM?: number;
+}
+
+/** True when `d` satisfies the optional hard distance ceiling. */
+function withinMaxDist(d: number, maxDistM?: number): boolean {
+  if (typeof maxDistM !== 'number' || !Number.isFinite(maxDistM) || maxDistM <= 0) return true;
+  return d <= maxDistM;
+}
+
+function clampToleranceDeg(v?: number): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return DEFAULT_DIR_TOLERANCE_DEG;
+  return Math.min(180, Math.max(0, v));
+}
+
+/** Initial great-circle bearing a → b in degrees (0 = north, clockwise). */
+export function bearingDeg(a: [number, number], b: [number, number]): number {
+  const lat1 = (a[0] * Math.PI) / 180;
+  const lat2 = (b[0] * Math.PI) / 180;
+  const dLon = ((b[1] - a[1]) * Math.PI) / 180;
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+/** Smallest absolute difference between two bearings, 0..180. */
+export function angleDiffDeg(a: number, b: number): number {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+/** Index of the polyline segment nearest to p, or -1 when there is none. */
+function nearestSegmentIndex(p: LatLon, line: [number, number][]): number {
+  let best = Infinity;
+  let bi = -1;
+  for (let i = 0; i < line.length - 1; i++) {
+    const d = segDistM(p, line[i], line[i + 1]);
+    if (d < best) {
+      best = d;
+      bi = i;
+    }
+  }
+  return bi;
+}
+
+/**
+ * Travel heading (degrees, 0 = north, clockwise) of the polyline where it
+ * passes nearest `camera`. Null when there is no usable segment (single point
+ * or a degenerate segment) — callers then keep the camera omnidirectional.
+ */
+export function headingAtNearest(
+  coords: [number, number][],
+  camera: LatLon,
+): number | null {
+  if (coords.length < 2) return null;
+  const i = nearestSegmentIndex(camera, coords);
+  if (i < 0) return null;
+  const a = coords[i];
+  const b = coords[i + 1];
+  if (a[0] === b[0] && a[1] === b[1]) return null;
+  return bearingDeg(a, b);
+}
+
+/** True when this camera's known direction admits the route's travel heading. */
+function directionAdmits(
+  camera: Camera,
+  coords: [number, number][],
+  respect: boolean,
+  toleranceDeg: number,
+): boolean {
+  if (!respect) return true;
+  const dir = camera.direction;
+  if (typeof dir !== 'number' || !Number.isFinite(dir)) return true;
+  const heading = headingAtNearest(coords, { lat: camera.lat, lon: camera.lon });
+  if (heading === null) return true;
+  return angleDiffDeg(heading, dir) <= toleranceDeg;
+}
+
 export function exposurePForPoints(
   coords: [number, number][],
   cameras: Camera[],
   bufferM: number,
+  opts?: ExposureOpts,
 ): { p: number; cameraIds: string[] } {
   const cameraIds: string[] = [];
   if (coords.length === 0 || cameras.length === 0 || !(bufferM > 0))
     return { p: 0, cameraIds };
+  const respect = opts?.respectDirection ?? true;
+  const toleranceDeg = clampToleranceDeg(opts?.toleranceDeg);
+  const maxDistM = opts?.maxDistM;
   let prod = 1;
   for (const c of cameras) {
     const d = pointToPolylineDistM({ lat: c.lat, lon: c.lon }, coords);
     if (!(d <= bufferM)) continue;
+    if (!withinMaxDist(d, maxDistM)) continue;
+    if (!directionAdmits(c, coords, respect, toleranceDeg)) continue;
     const pCam = 0.95 * Math.max(0, 1 - d / bufferM);
     if (!(pCam > 0)) continue;
     cameraIds.push(c.id);
@@ -122,15 +228,21 @@ export function scoreRoute(
   route: RouteGeom,
   cameras: Camera[],
   bufferM: number,
+  opts?: ExposureOpts,
 ): { exposures: Exposure[]; exposureCount: number; score: number } {
+  const respect = opts?.respectDirection ?? true;
+  const toleranceDeg = clampToleranceDeg(opts?.toleranceDeg);
+  const maxDistM = opts?.maxDistM;
   const exposures: Exposure[] = [];
   for (const c of cameras) {
     const d = pointToPolylineDistM(
       { lat: c.lat, lon: c.lon },
       route.coordinates,
     );
-    if (d <= bufferM)
-      exposures.push({ cameraId: c.id, lat: c.lat, lon: c.lon, distM: d });
+    if (!(d <= bufferM)) continue;
+    if (!withinMaxDist(d, maxDistM)) continue;
+    if (!directionAdmits(c, route.coordinates, respect, toleranceDeg)) continue;
+    exposures.push({ cameraId: c.id, lat: c.lat, lon: c.lon, distM: d });
   }
   exposures.sort((x, y) => x.distM - y.distM);
   return {
