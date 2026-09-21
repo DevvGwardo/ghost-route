@@ -80,12 +80,57 @@ function bufferPolygon(lat: number, lon: number, radiusM: number, steps = 48): n
   return [ring];
 }
 
+// Slice first so every viewport — street or full-US — renders a bounded
+// set; the overflow count surfaces in the "+N more" notice below.
+function visibleCameras(cameras: CameraPoint[]): CameraPoint[] {
+  return cameras.slice(0, MAX_RENDERED_CAMERAS);
+}
+
+const BUF_FILL_PAINT = { 'fill-color': '#d93025', 'fill-opacity': 0.06 };
+const BUF_LINE_PAINT = { 'line-color': '#d93025', 'line-width': 1 };
+
+function buffersFc(visible: CameraPoint[], bufferMeters: number): FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: visible.map((c) => ({
+      type: 'Feature',
+      properties: { id: c.id },
+      geometry: { type: 'Polygon', coordinates: bufferPolygon(c.lat, c.lon, bufferMeters) },
+    })),
+  };
+}
+
+function dotsFc(visible: CameraPoint[]): FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: visible.map((c) => ({
+      type: 'Feature',
+      properties: {
+        id: c.id,
+        address: c.address ?? '',
+        source: c.source ?? '',
+        verified: c.verified ? 'yes' : 'no',
+        brand: c.brand ?? '',
+      },
+      geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
+    })),
+  };
+}
+
 export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerProps) {
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
+  // Latest inputs for the lifecycle effect below, which installs the sources
+  // once per map. Data updates then flow through setData into the existing
+  // sources — a full teardown/rebuild on every bbox fetch made the markers
+  // flicker during pitched (3D) pans.
+  const dataRef = useRef({ cameras, bufferMeters });
+  dataRef.current = { cameras, bufferMeters };
+
+  // Layer lifecycle: sources, layers, and interaction handlers exist for the
+  // whole life of the map instance.
   useEffect(() => {
     if (!map) return;
-    let cancelled = false;
 
     const onDotClick = (e: maplibregl.MapLayerMouseEvent) => {
       const props = (e.features?.[0]?.properties ?? {}) as Record<string, string>;
@@ -112,71 +157,26 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
       map.getCanvas().style.cursor = '';
     };
 
-    const cleanup = () => {
-      popupRef.current?.remove();
-      popupRef.current = null;
+    const install = () => {
       try {
-        map.off('click', DOT_LAYER, onDotClick);
-        map.off('mouseenter', DOT_LAYER, onEnter);
-        map.off('mouseleave', DOT_LAYER, onLeave);
-        for (const l of [DOT_LAYER, BUF_LINE, BUF_FILL]) {
-          if (map.getLayer(l)) map.removeLayer(l);
-        }
-        for (const s of [DOT_SRC, BUF_SRC]) {
-          if (map.getSource(s)) map.removeSource(s);
-        }
-      } catch {
-        /* teardown must never throw */
-      }
-    };
-
-    const apply = () => {
-      if (cancelled || !map.isStyleLoaded()) return;
-      // Slice first so every viewport — street or full-US — renders a
-      // bounded set. `cameras` prop identity changes on each bbox fetch,
-      // so this re-runs at all zooms.
-      const visible = cameras.slice(0, MAX_RENDERED_CAMERAS);
-      const showBuffers = visible.length <= MAX_BUFFERED_CAMERAS;
-      cleanup();
-      try {
-        if (showBuffers) {
-          const buffers: FeatureCollection = {
-            type: 'FeatureCollection',
-            features: visible.map((c) => ({
-              type: 'Feature',
-              properties: { id: c.id },
-              geometry: { type: 'Polygon', coordinates: bufferPolygon(c.lat, c.lon, bufferMeters) },
-            })),
-          };
-          map.addSource(BUF_SRC, { type: 'geojson', data: buffers });
+        const { cameras: cams, bufferMeters: meters } = dataRef.current;
+        const visible = visibleCameras(cams);
+        if (visible.length <= MAX_BUFFERED_CAMERAS) {
+          map.addSource(BUF_SRC, { type: 'geojson', data: buffersFc(visible, meters) });
           map.addLayer({
             id: BUF_FILL,
             type: 'fill',
             source: BUF_SRC,
-            paint: { 'fill-color': '#d93025', 'fill-opacity': 0.06 },
+            paint: BUF_FILL_PAINT,
           });
           map.addLayer({
             id: BUF_LINE,
             type: 'line',
             source: BUF_SRC,
-            paint: { 'line-color': '#d93025', 'line-width': 1 },
+            paint: BUF_LINE_PAINT,
           });
         }
-        const dots: FeatureCollection = {
-          type: 'FeatureCollection',
-          features: visible.map((c) => ({
-            type: 'Feature',
-            properties: {
-              id: c.id,
-              address: c.address ?? '',
-              source: c.source ?? '',
-              verified: c.verified ? 'yes' : 'no',
-              brand: c.brand ?? '',
-            },
-            geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
-          })),
-        };
-        map.addSource(DOT_SRC, { type: 'geojson', data: dots });
+        map.addSource(DOT_SRC, { type: 'geojson', data: dotsFc(visible) });
         map.addLayer({
           id: DOT_LAYER,
           type: 'circle',
@@ -205,16 +205,58 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
       }
     };
 
-    if (map.isStyleLoaded()) {
-      apply();
-    } else {
-      map.once('load', apply);
-    }
+    const cleanup = () => {
+      popupRef.current?.remove();
+      popupRef.current = null;
+      try {
+        map.off('click', DOT_LAYER, onDotClick);
+        map.off('mouseenter', DOT_LAYER, onEnter);
+        map.off('mouseleave', DOT_LAYER, onLeave);
+        for (const l of [DOT_LAYER, BUF_LINE, BUF_FILL]) {
+          if (map.getLayer(l)) map.removeLayer(l);
+        }
+        for (const s of [DOT_SRC, BUF_SRC]) {
+          if (map.getSource(s)) map.removeSource(s);
+        }
+      } catch {
+        /* teardown must never throw */
+      }
+    };
+
+    if (map.isStyleLoaded()) install();
+    else map.once('load', install);
     return () => {
-      cancelled = true;
-      map.off('load', apply);
+      map.off('load', install);
       cleanup();
     };
+  }, [map]);
+
+  // Data sync: push the current cameras into the existing sources in place.
+  useEffect(() => {
+    if (!map || !map.isStyleLoaded()) return;
+    try {
+      const visible = visibleCameras(cameras);
+      const dotSrc = map.getSource(DOT_SRC) as maplibregl.GeoJSONSource | undefined;
+      if (!dotSrc) return; // lifecycle effect installs with the latest data
+      dotSrc.setData(dotsFc(visible));
+      const showBuffers = visible.length <= MAX_BUFFERED_CAMERAS;
+      const bufSrc = map.getSource(BUF_SRC) as maplibregl.GeoJSONSource | undefined;
+      if (showBuffers && bufSrc) {
+        bufSrc.setData(buffersFc(visible, bufferMeters));
+      } else if (showBuffers && !bufSrc) {
+        // Zoomed in after installing buffer-free: add buffers under the dots.
+        map.addSource(BUF_SRC, { type: 'geojson', data: buffersFc(visible, bufferMeters) });
+        map.addLayer({ id: BUF_FILL, type: 'fill', source: BUF_SRC, paint: BUF_FILL_PAINT }, DOT_LAYER);
+        map.addLayer({ id: BUF_LINE, type: 'line', source: BUF_SRC, paint: BUF_LINE_PAINT }, DOT_LAYER);
+      } else if (!showBuffers && bufSrc) {
+        for (const l of [BUF_LINE, BUF_FILL]) {
+          if (map.getLayer(l)) map.removeLayer(l);
+        }
+        map.removeSource(BUF_SRC);
+      }
+    } catch {
+      /* data sync must never break the map */
+    }
   }, [map, cameras, bufferMeters]);
 
   const hidden = Math.max(0, cameras.length - MAX_RENDERED_CAMERAS);

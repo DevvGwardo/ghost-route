@@ -36,6 +36,32 @@ const REROUTE_BACKOFF_MAX_MS = 120_000;
 
 const coordLabel = (p: LatLon): string => `${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`;
 
+// Camera refetches are skipped while the viewport stays inside the last
+// fetched bbox plus padding. Pitched (3D) pans sweep a wider ground area and
+// otherwise fire a fetch on every moveend, rebuilding the camera layers and
+// flickering the markers.
+const CAM_BBOX_PAD = 0.35; // fraction of span, added on each side
+
+function padBBox(b: BBox, f: number): BBox {
+  const padLon = (b.maxLon - b.minLon) * f;
+  const padLat = (b.maxLat - b.minLat) * f;
+  return {
+    minLon: Math.max(-180, b.minLon - padLon),
+    minLat: Math.max(-85, b.minLat - padLat),
+    maxLon: Math.min(180, b.maxLon + padLon),
+    maxLat: Math.min(85, b.maxLat + padLat),
+  };
+}
+
+function coversBBox(outer: BBox, inner: BBox): boolean {
+  return (
+    inner.minLon >= outer.minLon - 1e-9 &&
+    inner.maxLon <= outer.maxLon + 1e-9 &&
+    inner.minLat >= outer.minLat - 1e-9 &&
+    inner.maxLat <= outer.maxLat + 1e-9
+  );
+}
+
 /** Unique by label + rounded coords, first occurrence wins. */
 function dedupePlaces(list: Place[]): Place[] {
   const seen = new Set<string>();
@@ -103,12 +129,17 @@ export default function App() {
   const [rerouting, setRerouting] = useState(false);
   const camDebounceRef = useRef<number | undefined>(undefined);
   const camAbortRef = useRef<AbortController | null>(null);
+  // Padded bbox of the last completed cameras fetch; moveends inside it skip
+  // the refetch entirely (see CAM_BBOX_PAD above).
+  const camBboxRef = useRef<BBox | null>(null);
   // Supersession guard for route requests (monotonic seq + AbortController).
   const routeGuardRef = useRef<RequestGuard | null>(null);
   const lastRerouteRef = useRef(0);
   const rerouteBackoffRef = useRef(REROUTE_COOLDOWN_MS);
 
   const handleBoundsChange = useCallback((bbox: BBox) => {
+    // Viewport still covered by the last fetch — keep current markers.
+    if (camBboxRef.current && coversBBox(camBboxRef.current, bbox)) return;
     window.clearTimeout(camDebounceRef.current);
     // Cancel the previous bbox fetch too — the newest viewport is the only
     // one whose markers should land, even if an older request is slower.
@@ -130,6 +161,7 @@ export default function App() {
           { signal: ctrl.signal },
         );
         if (ctrl.signal.aborted) return;
+        camBboxRef.current = padBBox(bbox, CAM_BBOX_PAD);
         setCameras(res.cameras);
       } catch (e) {
         if (isAbortError(e)) return; // superseded viewport — not an error
