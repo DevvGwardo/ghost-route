@@ -79,6 +79,33 @@ describe('store: camera filters', () => {
     for (const c of page.cameras) expect(c.verified).toBe(true);
   });
 
+  it('decimation is stable across pans: overlapping viewports keep most markers', () => {
+    // 1000 cameras along a corridor; two viewports offset by 100 cameras.
+    // Old id-stride decimation returned a different clump per bbox (the
+    // stride and its alignment both changed), so markers vanished and
+    // "moved" on every pan. Hash-ranked decimation keeps per-camera
+    // identity stable, so the overlap stays mostly intact.
+    const big: Camera[] = Array.from({ length: 1000 }, (_, i) => ({
+      id: `cam-${String(i).padStart(4, '0')}`,
+      lat: 30.3 + i * 0.0005,
+      lon: -97.7 + i * 0.0005,
+      source: 'deflock',
+      verified: true,
+    }));
+    const store = createMemoryStore(big);
+    const a = store.camerasInBboxPage(-98, 29, -96, 31, 500);
+    expect(a.truncated).toBe(true);
+    // Second viewport drops the first 100 cameras, gains 100 new ones.
+    const b = store.camerasInBboxPage(-97.95, 29.05, -95.95, 31.05, 500);
+    expect(b.truncated).toBe(true);
+    const aIds = new Set(a.cameras.map((c) => c.id));
+    const shared = b.cameras.filter((c) => aIds.has(c.id)).length;
+    expect(shared).toBeGreaterThanOrEqual(400); // ≈455 expected; churn is edge-only
+    // Deterministic: the same query twice returns the same page.
+    const again = store.camerasInBboxPage(-98, 29, -96, 31, 500);
+    expect(again.cameras.map((c) => c.id)).toEqual(a.cameras.map((c) => c.id));
+  });
+
   it('cameraCounts reports the verified split behind the total', () => {
     const store = createMemoryStore(SEED);
     expect(store.cameraCounts()).toEqual({ total: 3, verified: 1 });

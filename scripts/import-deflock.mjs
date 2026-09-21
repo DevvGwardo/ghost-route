@@ -236,6 +236,12 @@ function normalizeOverpass(json) {
       };
       const address = addressFromTags(tags);
       if (address) rec.address = String(address);
+      // OSM tags bearing as a string ("270") or cardinal ("N"); only the
+      // numeric form is unambiguous, cardinals are skipped as unknown.
+      if (typeof tags.direction === "string" && tags.direction.trim() !== "") {
+        const dir = Number(tags.direction);
+        if (Number.isFinite(dir)) rec.direction = ((dir % 360) + 360) % 360;
+      }
       return rec;
     });
 }
@@ -265,8 +271,28 @@ function normalizeSnapshot(json) {
       verified: brand === "Flock Safety",
     };
     if (brand) rec.brand = brand;
-    if (typeof p.direction === "number" && Number.isFinite(p.direction) && p.direction !== 0)
-      rec.direction = p.direction;
+    // Bearing union: scalar `direction` plus any extra heads in `directions`.
+    // A scalar of 0 (due north) is a real bearing — dropping it used to turn
+    // ~9k cameras omnidirectional, flagging them on routes they cannot see.
+    const bearings = [];
+    const seenBearing = new Set();
+    const addBearing = (v) => {
+      if (typeof v !== "number" || !Number.isFinite(v)) return;
+      const b = ((v % 360) + 360) % 360;
+      if (!seenBearing.has(b)) {
+        seenBearing.add(b);
+        bearings.push(b);
+      }
+    };
+    addBearing(p.direction);
+    if (Array.isArray(p.directions)) for (const d of p.directions) addBearing(d);
+    if (bearings.length === 1) {
+      rec.direction = bearings[0];
+    } else if (bearings.length > 1) {
+      if (typeof p.direction === "number" && Number.isFinite(p.direction))
+        rec.direction = p.direction;
+      rec.directions = bearings;
+    }
     out.push(rec);
   }
   return out;

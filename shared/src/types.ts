@@ -23,6 +23,13 @@ export interface Camera {
   verified: boolean;
   brand?: string;
   direction?: number;
+  /**
+   * Additive: additional compass bearings this camera watches (multi-headed
+   * units, e.g. both directions of a road). An exposure counts when the
+   * route's travel heading matches any known bearing. Absent/empty leaves
+   * `direction` as the only bearing.
+   */
+  directions?: number[];
 }
 
 /** Additive (v1.2): travel mode. Default 'driving'. */

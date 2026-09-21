@@ -274,3 +274,77 @@ describe('api: respectDirection request handling', () => {
     }
   }, 60_000);
 });
+
+describe('multi-bearing cameras (`directions[]`, data-fix regression)', () => {
+  // direction === 0 used to be dropped at import (treated as "no bearing"),
+  // and the `directions[]` array from the snapshot was ignored entirely —
+  // both turned watched cameras into omnidirectional ones that flagged
+  // routes they cannot see.
+  const north = { id: 'north', coordinates: northLine(), distanceM: 5000, durationS: 300 };
+  const south = {
+    id: 'south',
+    coordinates: [...northLine()].reverse(),
+    distanceM: 5000,
+    durationS: 300,
+  };
+  const east = eastRoute('east');
+  const midLatLon = { lat: 30.32, lon: -97.75 };
+
+  it('direction 0 (due north) is a real bearing, not "unknown"', () => {
+    const cam = makeCamera('c-north', midLatLon.lat, midLatLon.lon, 0);
+    expect(rankByExposure([north], [cam], BUFFER_M)[0].exposureCount).toBe(1);
+    expect(rankByExposure([east], [cam], BUFFER_M)[0].exposureCount).toBe(0);
+  });
+
+  it('a dual-head camera (directions [0, 180]) sees both road directions, none crosswise', () => {
+    const cam = {
+      ...makeCamera('c-both', midLatLon.lat, midLatLon.lon),
+      directions: [0, 180],
+    };
+    expect(rankByExposure([north], [cam], BUFFER_M)[0].exposureCount).toBe(1);
+    expect(rankByExposure([south], [cam], BUFFER_M)[0].exposureCount).toBe(1);
+    expect(rankByExposure([east], [cam], BUFFER_M)[0].exposureCount).toBe(0);
+  });
+
+  it('bearings union: scalar direction plus extra heads in directions', () => {
+    const cam = {
+      ...makeCamera('c-union', 30.3, -97.725, 90),
+      directions: [270],
+    };
+    expect(rankByExposure([east], [cam], BUFFER_M)[0].exposureCount).toBe(1);
+    expect(
+      rankByExposure(
+        [{ ...east, coordinates: [...eastLine()].reverse() }],
+        [cam],
+        BUFFER_M,
+      )[0].exposureCount,
+    ).toBe(1);
+    expect(rankByExposure([north], [cam], BUFFER_M)[0].exposureCount).toBe(0);
+  });
+
+  it('non-numeric directions entries are ignored; all-invalid stays omnidirectional', () => {
+    const partly = {
+      ...makeCamera('c-partly', midLatLon.lat, midLatLon.lon, 0),
+      directions: [Number.NaN, 180],
+    };
+    expect(rankByExposure([north], [partly], BUFFER_M)[0].exposureCount).toBe(1);
+    expect(rankByExposure([south], [partly], BUFFER_M)[0].exposureCount).toBe(1);
+    const allBad = {
+      ...makeCamera('c-bad', 30.3, -97.725),
+      directions: [Number.NaN, 'x' as unknown as number],
+    };
+    expect(rankByExposure([east], [allBad], BUFFER_M)[0].exposureCount).toBe(1);
+  });
+
+  it('the step path (exposurePForPoints) honors directions[] the same way', () => {
+    const both = {
+      ...makeCamera('c-both', 30.3, -97.725),
+      directions: [90, 270],
+    };
+    expect(exposurePForPoints(eastLine(), [both], BUFFER_M).cameraIds).toContain('c-both');
+    const cross = { ...makeCamera('c-cross', 30.3, -97.725), directions: [0, 180] };
+    const out = exposurePForPoints(eastLine(), [cross], BUFFER_M);
+    expect(out.p).toBe(0);
+    expect(out.cameraIds).toEqual([]);
+  });
+});

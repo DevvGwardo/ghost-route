@@ -124,7 +124,9 @@ export default function App() {
             maxLon: bbox.maxLon,
             maxLat: bbox.maxLat,
           },
-          500,
+          // Above the render cap (1000) so truncation is rare at usable
+          // zooms; server clamps to its own MAX_LIMIT.
+          2000,
           { signal: ctrl.signal },
         );
         if (ctrl.signal.aborted) return;

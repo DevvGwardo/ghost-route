@@ -18,6 +18,8 @@ export interface Camera {
    * clockwise). Absent/unknown = omnidirectional (always counts).
    */
   direction?: number;
+  /** Additional compass bearings watched (multi-headed cameras). */
+  directions?: number[];
 }
 export interface Exposure { cameraId: string; lat: number; lon: number; distM: number; }
 export type RankedRoute = RouteInput & {
@@ -74,10 +76,10 @@ export const DEFAULT_DIR_TOLERANCE_DEG = 60;
 
 export interface ExposureOpts {
   /**
-   * When true (default), a camera with a known `direction` only counts when
-   * the route's travel heading where it passes nearest is within
-   * `toleranceDeg` of that direction. Cameras without a direction always
-   * count (current behavior preserved).
+   * When true (default), a camera with known bearings (`direction` and/or
+   * `directions`) only counts when the route's travel heading where it
+   * passes nearest is within `toleranceDeg` of any of them. Cameras without
+   * bearings always count (current behavior preserved).
    */
   respectDirection?: boolean;
   /** Half-angle window in degrees. Default 60, clamped to 0..180. */
@@ -152,7 +154,24 @@ export function headingAtNearest(
   return bearingDeg({ lat: a[0], lon: a[1] }, { lat: b[0], lon: b[1] });
 }
 
-/** True when this camera's known direction admits the route's travel heading. */
+/** All compass bearings this camera watches; empty = omnidirectional. */
+function knownBearings(camera: Camera): number[] {
+  const out: number[] = [];
+  const seen = new Set<number>();
+  const add = (v: unknown): void => {
+    if (typeof v !== 'number' || !Number.isFinite(v)) return;
+    const b = ((v % 360) + 360) % 360;
+    if (!seen.has(b)) {
+      seen.add(b);
+      out.push(b);
+    }
+  };
+  add(camera.direction);
+  if (Array.isArray(camera.directions)) for (const v of camera.directions) add(v);
+  return out;
+}
+
+/** True when this camera's known bearings admit the route's travel heading. */
 function directionAdmits(
   camera: Camera,
   coords: [number, number][],
@@ -160,11 +179,11 @@ function directionAdmits(
   toleranceDeg: number,
 ): boolean {
   if (!respect) return true;
-  const dir = camera.direction;
-  if (typeof dir !== 'number' || !Number.isFinite(dir)) return true;
+  const bearings = knownBearings(camera);
+  if (bearings.length === 0) return true;
   const heading = headingAtNearest(coords, { lat: camera.lat, lon: camera.lon });
   if (heading === null) return true;
-  return angleDiffDeg(heading, dir) <= toleranceDeg;
+  return bearings.some((b) => angleDiffDeg(heading, b) <= toleranceDeg);
 }
 
 export function rankByExposure(

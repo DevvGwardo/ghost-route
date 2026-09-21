@@ -11,6 +11,8 @@ export interface Camera {
   verified: boolean;
   brand?: string;
   direction?: number;
+  /** Additional compass bearings watched (multi-headed cameras). */
+  directions?: number[];
 }
 
 /**
@@ -161,6 +163,27 @@ function validateBbox(
  * collapsing to one file-order cluster. `truncated` is true iff the filtered
  * match set did not fit.
  */
+/**
+ * Deterministic 32-bit FNV-1a hash of a camera id. Used to pick WHICH
+ * cameras survive decimation: id-order stride sampling reshuffled the whole
+ * marker set on every pan (ids cluster spatially, so each viewport returned
+ * a different clump), which read as cameras "moving" on the map. Hash rank
+ * is stable per camera, so the same area keeps showing the same cameras as
+ * the viewport shifts.
+ */
+function stableRank(id: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < id.length; i++) {
+    h ^= id.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+function byId(a: Camera, b: Camera): number {
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
 function queryBbox(
   cameras: Camera[],
   minLon: number,
@@ -173,21 +196,21 @@ function queryBbox(
   validateBbox(minLon, minLat, maxLon, maxLat);
   if (!Number.isInteger(limit)) throw new RangeError("limit must be an integer");
   const n = Math.min(Math.max(limit, 1), MAX_LIMIT);
-  const matched = cameras
-    .filter(
-      (c) =>
-        c.lon >= minLon &&
-        c.lon <= maxLon &&
-        c.lat >= minLat &&
-        c.lat <= maxLat &&
-        matchesFilter(c, filter),
-    )
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const matched = cameras.filter(
+    (c) =>
+      c.lon >= minLon &&
+      c.lon <= maxLon &&
+      c.lat >= minLat &&
+      c.lat <= maxLat &&
+      matchesFilter(c, filter),
+  );
   if (matched.length <= n) {
-    return { cameras: matched, total: matched.length, truncated: false };
+    return { cameras: matched.sort(byId), total: matched.length, truncated: false };
   }
-  const stride = Math.ceil(matched.length / n);
-  const page = matched.filter((_, i) => i % stride === 0).slice(0, n);
+  const page = matched
+    .sort((a, b) => stableRank(a.id) - stableRank(b.id) || byId(a, b))
+    .slice(0, n)
+    .sort(byId);
   return { cameras: page, total: matched.length, truncated: true };
 }
 
@@ -383,6 +406,7 @@ class CameraCollection {
           verified: c.verified === true,
           ...(typeof c.brand === "string" ? { brand: c.brand } : {}),
           ...(typeof c.direction === "number" ? { direction: c.direction } : {}),
+          ...(Array.isArray(c.directions) ? { directions: c.directions } : {}),
         });
         this.indexCamera(this.cameras[this.cameras.length - 1]);
         return;

@@ -55,6 +55,14 @@ TypeSafe Jev (`system_one` choice head) with a deterministic fallback when no
   - `GET /api/cameras?bbox=…` also accepts `verifiedOnly=1`, `brand=`, `source=`
     (repeatable or comma-separated). Filters apply before decimation, so
     `total`/`truncated` describe the filtered set. Response shape unchanged.
+- Additive (directions fix): internal camera records may carry
+  `directions?:number[]` — additional compass bearings watched by multi-headed
+  units (e.g. both directions of a road), sourced from the snapshot's
+  `directions` property. Direction-aware exposure counts a camera when the
+  route's travel heading is within tolerance of **any** known bearing
+  (`direction` ∪ `directions`); `direction === 0` (due north) is a real
+  bearing, never treated as unknown. Cameras with no bearings stay
+  omnidirectional. Not exposed in any response shape.
   - `POST /api/cameras/:id/report` body `{ reason }` where reason ∈
     `gone | not-a-camera | wrong-location | other` →
     `{ camera, reports:number, reasons:Record<string,number> }`;
