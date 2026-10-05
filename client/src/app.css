@@ -126,25 +126,151 @@ button {
 }
 
 .gm-marker.origin {
-  background: var(--gm-blue);
+  /* Hollow start ring: distinct from the blue live-position puck and from
+     the red/amber camera dots. */
+  background: #fff;
+  border: 4px solid #3c4043;
+  width: 18px;
+  height: 18px;
 }
 
+/* Destination pin: a teardrop with its tip on the point (anchor bottom), a
+   shape no camera dot shares. The rotated shape is a child: MapLibre owns the
+   marker element's transform for positioning. */
 .gm-marker.dest {
-  background: var(--gm-red);
+  position: relative;
+  width: 30px;
+  height: 34px;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.gm-pin {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #3c4043;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+.gm-pin::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
 }
 
 /* ---------- navigation markers (follow mode) ---------- */
 
-/* Live user position while navigating. */
+/* Live user position while navigating: a blue disc that becomes a heading
+   arrow once a direction is known (marker rotates with the map). */
 .gm-user-dot {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--gm-blue);
   border: 3px solid #fff;
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.15),
+    0 0 0 6px rgba(26, 115, 232, 0.18),
     0 1px 4px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gm-user-arrow {
+  display: none;
+  width: 34px;
+  height: 34px;
+}
+
+.gm-user-arrow path {
+  fill: var(--gm-blue);
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.gm-user-dot.has-heading {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+.gm-user-dot.has-heading .gm-user-arrow {
+  display: block;
+}
+
+/* Route label chips on the map ("19 min · 3 cams"). */
+.gm-route-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: none;
+  border-radius: 10px;
+  padding: 6px 10px;
+  background: #fff;
+  color: var(--gm-text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.35), 0 2px 8px rgba(60, 64, 67, 0.15);
+}
+
+.gm-route-chip b {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.gm-route-chip span {
+  color: var(--gm-amber-text);
+  font-weight: 500;
+}
+
+.gm-route-chip.clean span {
+  color: var(--gm-green-text);
+}
+
+.gm-route-chip .gm-route-chip-tag {
+  color: var(--gm-muted);
+  font-weight: 400;
+}
+
+.gm-route-chip.sel {
+  background: var(--gm-blue);
+  color: #fff;
+  cursor: default;
+  z-index: 2;
+}
+
+.gm-route-chip.sel span,
+.gm-route-chip.sel.clean span {
+  color: #e8f0fe;
+}
+
+.gm-route-chip.gm-chip-hidden {
+  visibility: hidden;
+}
+
+.gm-route-chip:hover:not(.sel) {
+  background: #f1f3f4;
 }
 
 /* Upcoming maneuver: an upward triangle marking the next turn. */
@@ -485,7 +611,7 @@ button {
   cursor: default;
 }
 
-.gm-find-btn:disabled::after {
+.gm-find-btn[aria-busy='true']::after {
   content: '';
   width: 16px;
   height: 16px;
@@ -1171,7 +1297,9 @@ button {
     transition: none;
   }
 
-  .gm-find-btn:disabled::after {
+  .gm-find-btn[aria-busy='true']::after,
+  .gm-spin,
+  .gm-nav-cam-pulse {
     animation: none;
   }
 
@@ -1594,11 +1722,7 @@ button {
 }
 
 .gm-degraded > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  min-width: 0;
 }
 
 .gm-degraded-x {
@@ -1611,4 +1735,434 @@ button {
   font-size: 12px;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+/* ================================================================ v1.3 pass
+   Mobile navigation HUD, trip summary, peek Start button, panel-aware
+   floating controls. See tools/blueprint for the checks behind each rule. */
+
+.gm-spin {
+  animation: gm-spin 900ms linear infinite;
+}
+
+.gm-seen-word {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* ---------- peek: summary + primary Start ---------- */
+
+.gm-peek-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gm-peek-row .gm-peek {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gm-start-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 999px;
+  background: var(--gm-blue);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 20px;
+  min-height: 48px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.4);
+}
+
+.gm-start-btn:hover:not(:disabled) {
+  background: var(--gm-blue-dark);
+}
+
+.gm-start-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Route cards: badges wrap under the time instead of squeezing it into an
+   ellipsis ("14.2 km · +4 …"). */
+.gm-route-card {
+  flex-wrap: wrap;
+}
+
+.gm-card-main {
+  flex: 1 1 140px;
+}
+
+.gm-card-badges {
+  flex-shrink: 1;
+}
+
+.gm-route-card .gm-subline {
+  white-space: normal;
+}
+
+/* ---------- compact trip summary (phones, routes shown) ---------- */
+
+.gm-topcard.compact {
+  padding: 4px;
+}
+
+.gm-trip-summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: var(--gm-text);
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.gm-trip-summary:hover {
+  background: #f8f9fa;
+}
+
+.gm-trip-mode {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gm-chip);
+  color: var(--gm-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gm-trip-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gm-trip-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.gm-trip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gm-trip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.gm-trip-dot.origin {
+  border: 2.5px solid #3c4043;
+  background: #fff;
+}
+
+.gm-trip-dot.dest {
+  background: #3c4043;
+}
+
+.gm-trip-edit {
+  color: var(--gm-muted);
+  flex-shrink: 0;
+  padding: 8px;
+}
+
+/* ---------- navigation HUD ---------- */
+
+.gm-topcard.nav {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.gm-topcard.nav .gm-nav > * {
+  pointer-events: auto;
+}
+
+.gm-nav {
+  padding: 0;
+  gap: 8px;
+}
+
+.gm-nav-card {
+  background: #3c4043;
+  color: #fff;
+  border-radius: var(--gm-radius);
+  box-shadow: var(--gm-shadow);
+  padding: 14px 16px;
+}
+
+.gm-nav-card.live {
+  background: #0d652d;
+}
+
+.gm-nav-card .gm-nav-row {
+  gap: 14px;
+}
+
+.gm-nav-card .gm-nav-main {
+  background: transparent;
+  padding: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.gm-nav-card .gm-nav-icon {
+  color: #fff;
+  width: 48px;
+}
+
+.gm-nav-dist {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 32px;
+  letter-spacing: -0.01em;
+}
+
+.gm-nav-card .gm-nav-text {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 22px;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gm-nav-verb {
+  opacity: 0.85;
+  font-weight: 400;
+}
+
+.gm-nav-road {
+  font-weight: 600;
+}
+
+.gm-nav-card .gm-nav-wait,
+.gm-nav-card .gm-nav-status {
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+}
+
+.gm-nav-then {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.gm-nav-cam {
+  background: #fce8e6;
+  color: #a50e0e;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 14px;
+  box-shadow: var(--gm-shadow);
+}
+
+.gm-nav-cam-pulse {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: #d93025;
+  color: #fff;
+  animation: gm-pulse 1.4s ease-out infinite;
+}
+
+@keyframes gm-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 48, 37, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(217, 48, 37, 0);
+  }
+}
+
+.gm-nav-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.gm-nav-tools > * {
+  pointer-events: auto;
+}
+
+.gm-nav-tools .gm-nav-recenter {
+  width: auto;
+  border-radius: 999px;
+  padding: 0 16px;
+  gap: 6px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Trip bar: replaces the route sheet for the whole navigation session. */
+.gm-tripbar {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--gm-bg);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -1px 6px rgba(60, 64, 67, 0.25);
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+}
+
+.gm-tripbar-exit {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--gm-border);
+  background: var(--gm-bg);
+  color: var(--gm-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.gm-tripbar-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.gm-tripbar-time {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0d652d;
+  line-height: 30px;
+}
+
+.gm-tripbar-time.arrived {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+}
+
+.gm-tripbar-meta {
+  font-size: 14px;
+  color: var(--gm-muted);
+}
+
+.gm-tripbar-done {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--gm-blue);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 22px;
+  cursor: pointer;
+}
+
+/* ---------- phones: floating controls sit above the bottom panel ---------- */
+
+@media (max-width: 1023px) {
+  /* The card may only use the height the bottom panel leaves (measured into
+     --gm-sheet-h by App). A fixed 100dvh - 220px let a card with options open
+     run under the peek sheet, hiding Find at every scroll position. */
+  .gm-topcard {
+    max-height: calc(100dvh - var(--gm-sheet-h, 200px) - 24px - env(safe-area-inset-top));
+  }
+
+  .gm-fabs {
+    top: auto;
+    transform: none;
+    bottom: calc(var(--gm-sheet-h, 120px) + 72px);
+  }
+
+  .gm-3d-toggle {
+    top: auto;
+    bottom: calc(var(--gm-sheet-h, 120px) + 16px);
+  }
+
+  /* MapLibre's attribution + zoom sat under the sheet. Lift them above it;
+     pinch-zoom replaces the +/- buttons on touch screens. */
+  .maplibregl-ctrl-bottom-right {
+    bottom: var(--gm-sheet-h, 0px);
+    right: 64px;
+  }
+
+  .gm-navigating .maplibregl-ctrl-bottom-right {
+    right: 0;
+  }
+
+  .gm-tripbar {
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (pointer: coarse) {
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .gm-tripbar {
+    left: 16px;
+    right: auto;
+    bottom: 16px;
+    width: 384px;
+    border-radius: var(--gm-radius);
+    box-shadow: var(--gm-shadow);
+    padding-bottom: 14px;
+  }
+
+  .gm-topcard.nav {
+    width: 384px;
+  }
 }

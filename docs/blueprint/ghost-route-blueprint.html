@@ -1,0 +1,430 @@
+<title>Ghost Route Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Overpass:wght@500;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Overpass+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a road atlas. Sticky contents rail, one reading column; KPI tiles are
+   green guide signs (the app's own maneuver card), route blue is the accent,
+   camera red is reserved for exposure and failures. */
+:root {
+  --ground: #f3f5f6; --surface: #ffffff; --ink: #17202a; --muted: #5a6672; --line: #dfe4e8;
+  --route: #1a6ad8; --route-soft: #e3edfb;
+  --sign: #0d652d; --sign-ink: #ffffff; --sign-sub: #cfe6d6;
+  --cam: #c5221f; --cam-soft: #fbe7e6; --ok: #137333; --ok-soft: #e3f2e7; --warn: #985a00; --warn-soft: #fbf0d9;
+  --shot: #0d1117;
+  --display: "Overpass", "Helvetica Neue", Arial, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "Overpass Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; --ground: #0e1318; --surface: #151c23; --ink: #e5eaef; --muted: #9aa6b2; --line: #26313b; --route: #7fb0ff; --route-soft: #182638; --sign: #0f6b33; --sign-sub: #bfe0c9; --cam: #ff8a80; --cam-soft: #3a1d1c; --ok: #7fd197; --ok-soft: #16301f; --warn: #f2b860; --warn-soft: #33270f; --shot: #05080b; }
+}
+:root[data-theme="dark"] { color-scheme: dark; --ground: #0e1318; --surface: #151c23; --ink: #e5eaef; --muted: #9aa6b2; --line: #26313b; --route: #7fb0ff; --route-soft: #182638; --sign: #0f6b33; --sign-sub: #bfe0c9; --cam: #ff8a80; --cam-soft: #3a1d1c; --ok: #7fd197; --ok-soft: #16301f; --warn: #f2b860; --warn-soft: #33270f; --shot: #05080b; }
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--ink); font: 17px/1.6 var(--body); padding-inline: 16px; padding-block: 0 96px; margin: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 48px; }
+nav.toc { position: sticky; top: calc(24px + env(safe-area-inset-top, 0px)); align-self: start; padding-top: 44px; font-size: 14px; }
+nav.toc p { font: 800 12px/1 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+nav.toc a { color: var(--muted); text-decoration: none; } nav.toc a:hover, nav.toc a:focus-visible { color: var(--route); }
+main { min-width: 0; }
+a { color: var(--route); }
+:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+header.top { padding-block: 44px 8px; }
+.eyebrow { font: 700 12px/1.3 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--route); margin: 0 0 14px; }
+h1 { font: 800 clamp(32px, 5vw, 54px)/1.04 var(--display); letter-spacing: -.015em; margin: 0 0 18px; text-wrap: balance; }
+h2 { font: 800 30px/1.15 var(--display); margin: 0 0 10px; text-wrap: balance; letter-spacing: -.01em; }
+h3 { font: 700 19px/1.3 var(--display); margin: 30px 0 8px; }
+.lede { font-size: 20px; max-width: 62ch; margin: 0 0 12px; }
+p { max-width: 68ch; margin: 0 0 12px; }
+.muted { color: var(--muted); }
+code { font: .84em var(--mono); background: var(--route-soft); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+section { padding-top: 60px; scroll-margin-top: 16px; }
+section > .intro { color: var(--muted); max-width: 68ch; }
+/* KPI tiles as guide signs: green field, white border inset, white legend. */
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; margin: 26px 0 8px; }
+.kpi { background: var(--sign); color: var(--sign-ink); border-radius: 9px; padding: 12px 14px 11px; box-shadow: inset 0 0 0 2px var(--sign), inset 0 0 0 3.5px rgba(255,255,255,.85); }
+.kpi b { display: block; font: 800 31px/1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.kpi span { display: block; font-size: 13px; line-height: 1.35; color: var(--sign-sub); margin-top: 7px; }
+figure { margin: 18px 0 0; min-width: 0; }
+figure img, video { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); background: var(--shot); }
+figcaption { font-size: 15px; color: var(--muted); margin-top: 8px; max-width: 80ch; }
+.hero-media { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 22px; align-items: start; margin-top: 18px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font: 700 12px/1.3 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+td.num { font: 13px/1.5 var(--mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.table-box { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin-top: 16px; }
+.table-box.tall { max-height: 640px; overflow-y: auto; }
+.table-box.tall thead th { position: sticky; top: 0; background: var(--surface); }
+.pill { display: inline-block; font: 700 11px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; padding: 5px 8px 4px; border-radius: 99px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--cam-soft); color: var(--cam); }
+.pill.done { background: var(--ok-soft); color: var(--ok); }
+.pill.fixed { background: var(--route-soft); color: var(--route); }
+.arch, .module { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.arch { padding: 16px; margin-top: 16px; overflow-x: auto; }
+.modules { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; margin-top: 16px; }
+.module { padding: 14px 16px; min-width: 0; } .module h4 { margin: 0 0 4px; font: 700 16px/1.3 var(--display); } .module p { font-size: 14.5px; color: var(--muted); margin: 6px 0 0; }
+.module .tag { font: 700 10px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--route); margin-left: 6px; }
+.tier { margin-top: 28px; } .tier > h3 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 4px; flex-wrap: wrap; } .tier > h3 small { font: 400 14px var(--body); color: var(--muted); }
+.items { display: grid; gap: 10px; margin-top: 12px; }
+.item { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.item h4 { margin: 0 0 6px; font: 700 16px/1.35 var(--display); }
+.item dl { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 4px 12px; margin: 0; font-size: 15px; }
+.item dt { color: var(--muted); } .item dd { margin: 0; min-width: 0; } .effort { font: 600 13px var(--mono); color: var(--muted); }
+.callout { background: var(--warn-soft); border-radius: 10px; padding: 14px 16px; margin-top: 18px; max-width: 82ch; } .callout strong { color: var(--warn); }
+ul.clean { padding-left: 20px; margin: 8px 0 0; max-width: 74ch; } ul.clean li { margin-bottom: 7px; }
+pre.cmd { background: var(--shot); color: #e5eaef; font: 13px/1.65 var(--mono); padding: 14px 16px; border-radius: 10px; overflow-x: auto; margin-top: 14px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 10px; font-size: 14px; color: var(--muted); }
+.legend i { display: inline-block; width: 22px; height: 6px; border-radius: 3px; vertical-align: middle; margin-right: 6px; }
+.feature-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.feature-head .pill { transform: translateY(-3px); }
+@media (max-width: 900px) { .wrap { grid-template-columns: 1fr; gap: 0; } nav.toc { display: none; } .hero-media, .two { grid-template-columns: 1fr; } .item dl { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <p>Blueprint</p>
+  <ol>
+    <li><a href="#status">Status</a></li>
+    <li><a href="#watch">Watch it</a></li>
+    <li><a href="#route-look">Route look</a></li>
+    <li><a href="#phone">Planning on a phone</a></li>
+    <li><a href="#navigation">Live navigation</a></li>
+    <li><a href="#matrix">Route matrix</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#tour">Tour</a></li>
+    <li><a href="#tests">Test results</a></li>
+    <li><a href="#fixed">Fixed in this pass</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#run">Run &amp; reproduce</a></li>
+  </ol>
+</nav>
+<main>
+<header class="top" id="status">
+  <p class="eyebrow">Ghost Route · blueprint · 2026-10-05 · 919ea0f + this pass (uncommitted)</p>
+  <h1>Routes that read at a glance, and a phone that can drive them</h1>
+  <p class="lede">Ghost Route plans driving routes around Flock ALPR cameras. This pass makes the routes themselves legible on the map, gives phone users a usable planning screen, and turns navigation into a real driving view with live distance, ETA, camera alerts and arrival.</p>
+  <p class="muted">Everything below came from local runs in Chrome 154 (Playwright, headless) on an Apple Silicon Mac against the Vite dev server and the Express API with 142,677 cameras loaded. Route plans come from three recorded <code>/api/route</code> fixtures, and reverse geocoding is stubbed with fixed street names. Tiles and cameras are live. The harness is in <code>tools/blueprint/</code>.</p>
+  <div class="kpis" role="list">
+    <div class="kpi" role="listitem"><b>69/69</b><span>blueprint browser checks (sweep, route matrix, navigation)</span></div>
+    <div class="kpi" role="listitem"><b>81/81</b><span>existing CDP nav checks (<code style="background:none;color:inherit;padding:0">verify:nav</code>)</span></div>
+    <div class="kpi" role="listitem"><b>390</b><span>unit tests passing (367 before, 23 added)</span></div>
+    <div class="kpi" role="listitem"><b>0</b><span>console errors across every run</span></div>
+    <div class="kpi" role="listitem"><b>70%</b><span>of a 390px phone shows map with routes up (about 25% before)</span></div>
+    <div class="kpi" role="listitem"><b>60 fps</b><span>while driving in the tilted 3D nav view</span></div>
+  </div>
+</header>
+
+<section id="watch">
+  <h2>Watch it</h2>
+  <p class="intro">A 390×844 phone drives the 2.3 km Rainey Street → East 11th Street fixture route. The emulated GPS reports position only (no heading, no speed), which is what most phone browsers give a web page. Partway through, the harness drags the map away, taps Re-center, and then leaves the road to force a reroute.</p>
+  <div class="hero-media">
+    <figure><video src="media/nav-drive.mp4#t=0.5" controls playsinline preload="metadata" muted></video><figcaption>Recorded by <code>tools/blueprint/navigation.mjs</code> in real Chrome. Time is compressed: one 30 m fix every 0.45 s.</figcaption></figure>
+    <figure><img src="media/nav-states.jpg" alt="Five phone screenshots: navigation start with a 220 m roundabout instruction, a Flock camera alert at 480 m, a Then preview before a right turn, the paused state with a Re-center button, and the arrival screen with a Done button" loading="lazy"><figcaption>Start, camera alert, "Then" preview, paused after a drag, arrived. The red stretches on the route are camera zones, and the gray part behind the puck has already been driven.</figcaption></figure>
+  </div>
+</section>
+
+<section id="route-look">
+  <div class="feature-head"><h2>Routes that read at a glance</h2><span class="pill fixed">new in this pass</span></div>
+  <p class="intro">Before this pass every candidate route was drawn as a 4–5 px line. A trip with no camera-free option drew seven of them over a city-wide scatter of camera dots, and the destination pin was the same red as a verified camera.</p>
+  <figure><img src="media/route-before-after.jpg" alt="Two desktop screenshots of the same Austin trip. Left, before: seven thin gray and blue lines, a red destination dot that matches the camera dots, suggestion lists open. Right, after: a thick blue route with a white halo, two slate alternatives, label chips reading 19 min 3 cams and 16 min 4 cams, red camera zones, a dark destination pin" loading="lazy"><figcaption>Same trip, same fixture. After: one bold selected route, two alternatives, a time-and-cameras chip on each, the route's own cameras on top, every other camera faded.</figcaption></figure>
+  <div class="legend" aria-label="Route legend">
+    <span><i style="background:#4285f4;box-shadow:0 0 0 2px #0b57d0"></i>selected route</span>
+    <span><i style="background:#bfcbd8;box-shadow:0 0 0 2px #7f8c99"></i>alternative (tap to select)</span>
+    <span><i style="background:#ea4335;box-shadow:0 0 0 2px #a50e0e"></i>camera zone: inside the avoidance buffer of a camera this route is exposed to</span>
+    <span><i style="background:#bdc1c6"></i>already driven</span>
+  </div>
+  <h3>How it works</h3>
+  <ul class="clean">
+    <li><code>pickDrawnRoutes</code> in <code>client/src/lib/routeStyle.ts</code> draws the selected route plus the two best-ranked alternatives. All of them stay in the sheet.</li>
+    <li>The selected route is three zoom-scaled layers (white halo, dark-blue edge, blue fill: 4 px at z10 up to 14 px at z18) with white direction chevrons. <code>syncRouteLayers</code> inserts every route layer beneath the camera dots, then redraws the route's own exposed cameras on top.</li>
+    <li><code>exposureRuns</code> densifies the polyline and paints the stretches inside the avoidance buffer of each exposed camera in red. This shows where a trip is seen, not just how many times.</li>
+    <li><code>labelAnchors</code> places each route's chip on the part of the route that is its own, far from the other drawn routes. A screen-space pass hides a lower-ranked chip that still collides, for example in a tilted phone view, and re-runs after every move.</li>
+    <li>Tapping an alternative's line or chip selects it. The hit test checks cameras and lines together, so a tap on a line near a camera still selects the line, and neither kind of tap moves an endpoint.</li>
+    <li>The fit uses the panels' live rectangles (<code>getFitPadding</code> in <code>App.tsx</code>) plus 40 px of headroom for the pin. Under a tilt it fits by measurement: <code>fitLine</code> projects the line at the candidate camera and corrects zoom and centre twice before animating. MapLibre's corner-based fit had left a long trip filling a third of the screen at 60°. The 3D tilt is now 45°, and toggling it refits.</li>
+  </ul>
+</section>
+
+<section id="phone">
+  <div class="feature-head"><h2>Planning on a phone</h2><span class="pill fixed">new in this pass</span></div>
+  <p class="intro">On a 390 px screen the full directions card stayed open with routes up. Together with the sheet it left about a quarter of the screen for the map. Navigate sat below all seven route cards, and the floating buttons overlapped the Find button.</p>
+  <figure><img src="media/phone-before-after.jpg" alt="Two phone screenshots. Before: a tall directions card with coordinates and open suggestion lists, floating buttons overlapping it, the route mostly hidden. After: a two-line trip summary, the full route visible, a Start button in the bottom sheet" loading="lazy"><figcaption>After: the trip collapses to two lines with street names from reverse geocoding, the route fits between the panels, and Start sits in the peek. The floating buttons and the map attribution now sit above the sheet.</figcaption></figure>
+  <h3>How it works</h3>
+  <ul class="clean">
+    <li><code>TripSummary.tsx</code> replaces the editor on screens under 1024 px once routes are shown. Tapping it brings the full card back. A result never collapses an editor the user has touched since that request started.</li>
+    <li>The sheet's height is measured into <code>--gm-sheet-h</code>. The floating buttons, the map controls and the card's max-height are all derived from it, so Find stays reachable with route options open.</li>
+    <li>Map taps and shared links resolve to street names through Nominatim reverse geocoding (<code>reverseGeocode</code> in <code>geocode.ts</code>). Photon's reverse endpoint sends no CORS header, so the browser cannot call it. Suggestion lists open only for text the user is typing.</li>
+    <li>The peek shows arrival clock time and a 48 px Start button. In the expanded sheet, Navigate and Share sit above the route list. The repeated "heur" pill and the ellipsized "+4 …" times are gone.</li>
+  </ul>
+</section>
+
+<section id="navigation">
+  <div class="feature-head"><h2>Live turn-by-turn on a phone</h2><span class="pill fixed">new in this pass</span></div>
+  <p class="intro">GPS follow, step tracking, camera lookahead and reroute already existed. What was missing made it hard to use in a car. The map turned only when the device reported a compass heading, which phone browsers rarely do while moving slowly. The view stayed flat with the puck in the middle. The banner was one ellipsized line. There was no time or distance left, the sheet kept covering the road, and nothing stopped the screen from sleeping. On real OSRM routes, arrival never fired.</p>
+  <div class="two">
+    <figure><img src="media/nav-start.jpg" alt="Phone navigation view: green maneuver card reading 220 m Enter roundabout River Street, a tilted 3D map with the blue heading arrow low on the screen, and a trip bar showing 4 min, 2.3 km and an arrival time" loading="lazy"><figcaption>The driving view: a big maneuver card, a 50° tilt, the puck in the lower third, and a trip bar with time, distance and arrival clock. The sheet, buttons and route chips are hidden.</figcaption></figure>
+    <figure><img src="media/nav-camera.jpg" alt="Phone navigation view with a red strip reading Flock camera in about 480 m under the maneuver card and a red camera zone on the route ahead" loading="lazy"><figcaption>The camera alert fires 480 m before the first exposed camera (16 fixes ahead) and clears once the last one is behind.</figcaption></figure>
+  </div>
+  <h3>How it works</h3>
+  <ul class="clean">
+    <li><code>projectOnRoute</code> (<code>lib/navigate.ts</code>) snaps each fix onto the route between vertices. Inside 30 m the puck is drawn on the road.</li>
+    <li>Heading falls back in order: the device heading, then the road's bearing 25 m ahead of the snapped point (<code>routeBearingAt</code>), then the direction between fixes 5 m or more apart. In the drive, 95% of fixes were within 25° of the true road bearing (median 0.1°).</li>
+    <li>The follow camera (<code>MapView.tsx</code>) eases linearly between fixes with 50° pitch, zoom chosen from speed, and 42% top padding so most of the screen shows the road ahead. A reroute redraws the line without yanking the camera out to fit the trip.</li>
+    <li><code>NavigateBanner.tsx</code> shows the distance large with the road name dominant, a "Then" chip when two turns are under 250 m apart, and the camera strip. <code>NavTripBar.tsx</code> shows time and distance left, the arrival clock, and the exit control.</li>
+    <li>Arrival now also fires when the snapped position is within 40 m of the route end. OSRM's final "arrive" step has zero length, so the step lock never reached it.</li>
+    <li><code>useWakeLock</code> keeps the screen on for the whole session and re-acquires the lock when the page becomes visible again. Over plain http on a LAN, the banner says live location needs HTTPS instead of waiting on "Acquiring GPS…" forever.</li>
+    <li>The depart and arrive wording was fixed server-side (<code>buildInstruction</code>): "Head north on Rainey Street", not "Head left onto Rainey Street", and "Arrive at Curve Street" instead of "Arrive at destination onto Curve Street".</li>
+  </ul>
+  <h3>Limits</h3>
+  <ul class="clean">
+    <li>All driving was emulated in desktop Chrome. No physical phone, real GPS noise, tunnel or iOS Safari run is covered here.</li>
+    <li>A web page cannot keep GPS running with the screen off or the browser in the background. The wake lock prevents sleep, but leaving the tab still stops guidance.</li>
+    <li>Phones only expose location to HTTPS pages. Driving with the dev server needs a tunnel or a deploy (see Run &amp; reproduce).</li>
+    <li>The camera alert window is a fixed 500 m. At highway speed that is about 15 seconds of warning.</li>
+    <li>The reroute fixture returns instantly, so the "Rerouting…" banner was never captured on a frame. The reroute request itself was checked: exactly one, planned from the live fix.</li>
+  </ul>
+</section>
+
+<section id="matrix">
+  <h2>Route matrix</h2>
+  <p class="intro">Three recorded trips, each on a desktop and a phone, in 2D and 3D: 12 frames, each measured rather than only captured. "In view" is the share of the selected route's vertices inside the unobstructed map area, between or beside the panels. "Fill" is how much of that area the route spans, by the larger of its width or height share.</p>
+  <figure><img src="media/route-matrix-desktop.jpg" alt="Six desktop screenshots: three trips, each flat and tilted" loading="lazy"><figcaption>Desktop, 1440×900. "north" has seven routes and none camera-free, "clean" has one camera-free route, "drive" is the 2.3 km navigation route.</figcaption></figure>
+  <figure><img src="media/route-matrix-phone.jpg" alt="Six phone screenshots: three trips, each flat and tilted" loading="lazy"><figcaption>Phone, 390×844. In the tilted "north" frame the declutter pass hides one alternative's chip that would have covered another.</figcaption></figure>
+  <div class="table-box"><table>
+    <thead><tr><th>Frame</th><th>In view</th><th>Endpoints</th><th>Fill</th><th>Chips shown</th><th>Chip clashes</th><th>Line drawn</th><th>Pitch</th><th>Zoom</th></tr></thead>
+    <tbody>
+<!--ROWS:frames-->
+<tr><td><code>desk-north-2d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">81%</td><td class="num">3/3</td><td class="num">0</td><td class="num">100%</td><td class="num">0°</td><td class="num">12.1</td></tr>
+<tr><td><code>desk-north-3d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">76%</td><td class="num">3/3</td><td class="num">0</td><td class="num">100%</td><td class="num">45°</td><td class="num">12.8</td></tr>
+<tr><td><code>desk-clean-2d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">81%</td><td class="num">1/1</td><td class="num">0</td><td class="num">100%</td><td class="num">0°</td><td class="num">13.4</td></tr>
+<tr><td><code>desk-clean-3d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">77%</td><td class="num">1/1</td><td class="num">0</td><td class="num">100%</td><td class="num">45°</td><td class="num">14</td></tr>
+<tr><td><code>desk-drive-2d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">81%</td><td class="num">1/1</td><td class="num">0</td><td class="num">100%</td><td class="num">0°</td><td class="num">14.9</td></tr>
+<tr><td><code>desk-drive-3d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">81%</td><td class="num">1/1</td><td class="num">0</td><td class="num">100%</td><td class="num">45°</td><td class="num">15.6</td></tr>
+<tr><td><code>phone-north-2d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">84%</td><td class="num">3/3</td><td class="num">0</td><td class="num">100%</td><td class="num">0°</td><td class="num">11.5</td></tr>
+<tr><td><code>phone-north-3d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">78%</td><td class="num">1/2</td><td class="num">0</td><td class="num">100%</td><td class="num">45°</td><td class="num">11.5</td></tr>
+<tr><td><code>phone-clean-2d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">84%</td><td class="num">1/1</td><td class="num">0</td><td class="num">100%</td><td class="num">0°</td><td class="num">12.8</td></tr>
+<tr><td><code>phone-clean-3d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">78%</td><td class="num">1/1</td><td class="num">0</td><td class="num">100%</td><td class="num">45°</td><td class="num">12.5</td></tr>
+<tr><td><code>phone-drive-2d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">83%</td><td class="num">1/1</td><td class="num">0</td><td class="num">100%</td><td class="num">0°</td><td class="num">14.3</td></tr>
+<tr><td><code>phone-drive-3d</code></td><td class="num">100%</td><td class="num">2/2</td><td class="num">78%</td><td class="num">1/1</td><td class="num">0</td><td class="num">100%</td><td class="num">45°</td><td class="num">14</td></tr>
+<!--/ROWS:frames-->
+    </tbody>
+  </table></div>
+  <p class="muted" style="margin-top:10px">The first matrix run failed three of these checks. Tilting to 3D left up to 8.2% of the route and the destination pin off a phone screen, and two chips collided in the tilted phone view. Looking at the frames also showed that the 60° desktop tilt shrank a long trip to about a third of the screen. All three are fixed; see the table below.</p>
+</section>
+
+<section id="architecture">
+  <h2>Architecture</h2>
+  <p class="intro">One React app state feeds a MapLibre map and three overlay panels. Navigation is a pure geometry module plus one shared GPS watch, so the banner, trip bar and map all act on the same fix.</p>
+  <div class="arch">
+<pre class="mermaid">
+flowchart LR
+  GPS["Phone GPS<br/>watchPosition"] --> GEO["useGeoPosition"]
+  GEO --> NAV["useNavigation<br/>snap · heading · steps · ETA"]
+  NAV --> PURE["navigate.ts<br/>projectOnRoute · routeBearingAt"]
+  APP["App.tsx<br/>trip state · fit padding"] --> NAV
+  APP --> MAP["MapView<br/>route layers · chips · puck · driving camera"]
+  STY["routeStyle.ts<br/>drawn routes · camera zones · label anchors"] --> MAP
+  NAV --> HUD["NavigateBanner + NavTripBar"]
+  APP --> PLAN["TripSummary · DirectionsCard · RouteSheet"]
+  APP -- "POST /api/route" --> API["Express API"]
+  API --> OSRM["OSRM (public demo)"]
+  API --> CAM["camera store<br/>142,677 cameras"]
+  API --> CLEAN["clean-route search + scoring"]
+  PLAN -- "search / reverse" --> GEOC["Photon · Nominatim"]
+</pre>
+  </div>
+  <div class="modules">
+    <div class="module"><h4>Route look<span class="tag">new</span></h4><code>client/src/lib/routeStyle.ts</code><p>Pure helpers: which routes to draw, camera-zone runs along a densified polyline, label anchors that avoid other routes. Covered by unit tests.</p></div>
+    <div class="module"><h4>Map<span class="tag">reworked</span></h4><code>client/src/components/MapView.tsx</code><p>Route layers beneath the camera dots, chips with screen-space declutter, a unified tap hit test, panel-aware fit with pitch, the driving camera and the heading puck. Layer updates wait for the style to load instead of being dropped.</p></div>
+    <div class="module"><h4>Navigation state<span class="tag">extended</span></h4><code>client/src/lib/useNavigation.ts</code><p>Adds the snapped puck with a fallback heading, distance and time left, the following step, and arrival by distance to the route end.</p></div>
+    <div class="module"><h4>Navigation HUD<span class="tag">new</span></h4><code>NavigateBanner.tsx</code> · <code>NavTripBar.tsx</code><p>Maneuver card, "Then" preview, camera strip, voice and Re-center buttons, and a trip bar with ETA, exit and Done.</p></div>
+    <div class="module"><h4>Phone planning<span class="tag">new</span></h4><code>TripSummary.tsx</code> · <code>App.tsx</code><p>Compact trip summary, the sheet height as a CSS variable, editor collapse that respects interaction, the wake lock, and the <code>window.__ghost</code> dev hook.</p></div>
+    <div class="module"><h4>Instructions</h4><code>server/src/services/osrm.ts</code><p>Departure uses the compass bearing from <code>bearing_after</code>. Arrival names the street and the side.</p></div>
+  </div>
+</section>
+
+<section id="tour">
+  <h2>Tour</h2>
+  <figure><img src="media/tour-desktop.jpg" alt="Five desktop screenshots: seven-route trip, an alternative selected, a camera popup, the expanded sheet, and a camera-free trip" loading="lazy"><figcaption>Desktop: a trip with no camera-free route, an alternative selected by tapping its chip, a camera's card (the trip is untouched), the expanded sheet with actions above the list, and a camera-free trip with a green "no cams" chip and no red zones.</figcaption></figure>
+  <figure><img src="media/tour-phone.jpg" alt="Five phone screenshots: empty state, compact trip with routes, full editor, editor with route options open, expanded sheet" loading="lazy"><figcaption>Phone: the empty state (the idle Find button no longer spins), the compact trip, the full editor, route options open with Find still above the sheet, and the expanded sheet.</figcaption></figure>
+</section>
+
+<section id="tests">
+  <h2>Test results</h2>
+  <p class="intro">Four layers. 390 unit tests (vitest; server, API contract and client logic). The repo's existing CDP navigation check (<code>scripts/verify-nav-browser.mjs</code>, 81/81 after two intentional updates). And three blueprint scripts that drive the real app in Chrome, one check per promise.</p>
+  <div class="table-box tall"><table>
+    <thead><tr><th>Area</th><th>Check</th><th>Measured</th><th>Result</th><th>Script</th></tr></thead>
+    <tbody>
+<!--ROWS:checks-->
+<tr><td>Planning UI</td><td>Idle Find button shows no loading spinner</td><td class="num">{"disabled":true,"content":"none","anim":"none"}</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Planning UI</td><td>Shared link resolves both endpoints to street names</td><td class="num">West Gibson Street, Austin → Parmer Lane, Austin</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Planning UI</td><td>No suggestion list opens without the user typing</td><td class="num">{"lists":0,"focus":"BODY"}</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>Map draws the selected route + at most 2 alternatives (of 7)</td><td class="num">alts=2, routes=7</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>Camera dots render above the route line, exposed cameras above all</td><td class="num">fill@102 cams@106 exposed@108</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>Camera zones painted on the selected route (it has 3 exposures)</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>Direction arrows drawn along the selected route</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>One label chip per drawn route, none overlapping</td><td class="num">19 min3 cams | 16 min4 cams | 16 min5 camsfastest</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Layout</td><td>Desktop: fitted route lies in the map area right of the panel</td><td class="num">100.0% of 388 vertices</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Planning UI</td><td>Start button visible and clickable without opening the sheet</td><td class="num">{"visible":true,"onTop":true,"enabled":true}</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>Tapping an alternative's chip selects that route</td><td class="num">clean-r1-0 → clean-r2-2</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>Tapping an alternative line selects it (and moves no endpoint)</td><td class="num">→ clean-r3-4</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Planning UI</td><td>Tapping a camera opens its card without moving an endpoint</td><td class="num">{"popup":true,"o":"West Gibson Street, Austin","d":"Parmer Lane, Austin"}</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>Endpoints don't share a camera dot's colour (pin + hollow ring)</td><td class="num">{"pinBg":"rgb(60, 64, 67)","originBg":"rgb(255, 255, 255)"}</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Planning UI</td><td>Demo-mode notice is readable in full (no ellipsis)</td><td class="num">Demo mode: Heuristic ranking (no JEV key) · public demo router</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Planning UI</td><td>Expanded sheet shows Navigate without scrolling past the list</td><td class="num">{"navInView":true,"truncated":0,"cards":7,"heur":0}</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Planning UI</td><td>Route cards show full time/distance (no ellipsis)</td><td class="num">0/7 truncated</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Planning UI</td><td>No jargon 'heur' pill repeated on every card</td><td class="num">0 cards</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Route look</td><td>Camera-free route: 'no cams' chip and no red zones</td><td class="num">{"chip":"7 minno cams","zones":false}</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>Routes shown → directions collapse to a two-line summary</td><td class="num">card height 58px</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>At least half the screen is unobstructed map</td><td class="num">70%</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>Fitted route lies between the top card and the sheet</td><td class="num">100.0% of 388 vertices</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>Floating buttons clear the top card and the sheet</td><td class="num">clear</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>Map attribution stays visible above the sheet</td><td class="num">attrib bottom 649 / sheet top 659</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>Start button in the peek, thumb-sized (≥44px)</td><td class="num">{"inView":true,"h":48}</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>Tapping the summary reopens the full trip editor</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>With route options open, Find stays reachable above the sheet</td><td class="num">clear</td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>Back returns to the compact summary</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Phone</td><td>No sideways scroll at 390px</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Health</td><td>No console errors or page exceptions</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>sweep</code></td></tr>
+<tr><td>Matrix</td><td>Whole selected route in the unobstructed map (all 12 frames ≥ 95%)</td><td class="num">worst 100%</td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Matrix</td><td>Route fills the free map (spans ≥ 60% of its width or height)</td><td class="num">worst 76%, 81/76/81/77/81/81/84/78/84/78/83/78</td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Matrix</td><td>Both endpoint markers visible in every frame</td><td class="num">all 2/2</td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Matrix</td><td>Visible label chips never overlap each other</td><td class="num">0 clashes</td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Matrix</td><td>The selected route's chip is always shown</td><td class="num">all frames</td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Matrix</td><td>Label chips stay clear of the panels</td><td class="num">all clear</td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Matrix</td><td>Selected line rendered under its own vertices (≥ 90% of probes)</td><td class="num">worst 100%</td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Matrix</td><td>3D frames are pitched, 2D frames flat</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Health</td><td>No console errors or page exceptions</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>routes</code></td></tr>
+<tr><td>Start</td><td>Start enters navigation from the peek in one tap</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Start</td><td>Driving view: maneuver card + trip bar; sheet, FABs and route chips hidden</td><td class="num">{"card":true,"bar":true,"sheet":false,"fabs":false,"toggle":false,"chips":0}</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Start</td><td>Screen wake lock requested so the phone does not sleep mid-drive</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Map tilts into a driving perspective (pitch ≥ 40°)</td><td class="num">pitch 50.0°</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Puck sits low on screen, looking ahead (lower 40%)</td><td class="num">y=599/844</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Heading known with no device heading (from the road)</td><td class="num">heading 17°, first leg 17°</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Guidance</td><td>Trip bar shows time left, distance left and arrival clock</td><td class="num">4 min2.3 km · arrive 1:46 PM</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Dragging the map pauses follow and shows Re-center</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Re-center resumes the driving view on the puck</td><td class="num">puck y=599</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Reroute</td><td>Leaving the route triggers exactly one reroute request</td><td class="num">1 request(s)</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Reroute</td><td>Off-route fixes surface 'Rerouting…' (or the new plan lands first)</td><td class="num">landed before a frame was sampled</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Reroute</td><td>Reroute plans from the live fix, not the planned origin</td><td class="num">30.2656,-97.7320</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Computed heading tracks the road (≤25° on ≥90% of fixes)</td><td class="num">95% of 38, median 0.1°</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Map rotates with travel (median map-vs-heading gap ≤ 20°)</td><td class="num">median 1.5°</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Driving tilt held for the whole drive</td><td class="num">min 50.0°</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Camera</td><td>Puck stays in the lower part of the screen while following</td><td class="num">100% of fixes</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Guidance</td><td>Distance left only goes down while on route</td><td class="num">41 fixes, 0 increases; 2274 → 1074 m</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Guidance</td><td>Time left counts down with distance</td><td class="num">219 s → 103 s</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Guidance</td><td>Distance left matches the true distance to go (±60 m)</td><td class="num">100% of fixes</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Guidance</td><td>Maneuver card walks through the turns in order</td><td class="num">River Street → North Interstate 35 → East 11th Street → Curve Street</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Guidance</td><td>'Then' preview appears for back-to-back turns</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Guidance</td><td>Next-turn chevron marks the upcoming maneuver on the map</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Cameras</td><td>Flock camera alert fires before the first camera is reached</td><td class="num">alert at fix 8, camera at fix 24: "Flock camera in ~480 m"</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Cameras</td><td>Alert clears once every camera is behind</td><td class="num">last camera at fix 30</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Cameras</td><td>Camera zones stay painted on the route while driving</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Arrival</td><td>Arriving shows 'You have arrived' with a Done button</td><td class="num"> You have arrivedDone</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Arrival</td><td>Done returns to the planning view with the route sheet</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Arrival</td><td>Leaving navigation drops the tilt and look-ahead padding</td><td class="num">pitch 0.0°, padding top 0</td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Arrival</td><td>GPS watch stops when navigation ends</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<tr><td>Health</td><td>No console errors or page exceptions</td><td class="num"></td><td><span class="pill ok">pass</span></td><td><code>navigation</code></td></tr>
+<!--/ROWS:checks-->
+    </tbody>
+  </table></div>
+  <h3>Performance</h3>
+  <div class="table-box"><table>
+    <thead><tr><th>Measure</th><th>Value</th><th>How it was measured</th></tr></thead>
+    <tbody>
+      <tr><td>Frame rate while driving</td><td class="num">60 fps</td><td>requestAnimationFrame count over the whole 78-fix drive: tilted 3D view, buildings, easing every fix (<code>navigation.mjs</code>).</td></tr>
+      <tr><td>Frame rate rotating the planning map in 3D</td><td class="num">60 fps</td><td>rAF count during a 2 s, 90° bearing ease with 7 routes, about 1,000 camera dots and the chips up (<code>sweep.mjs</code>).</td></tr>
+      <tr><td>Shared link to drawn routes</td><td class="num">2,609 ms</td><td>Navigation to a <code>#r=</code> link until 7 routes are in app state and the fit animation has settled. The route API is a fixture, so this is client time plus the 800 ms endpoint debounce.</td></tr>
+      <tr><td>App ready (map style loaded)</td><td class="num">832 ms</td><td>From <code>page.goto</code> to <code>__grMap.isStyleLoaded()</code> on a warm dev server.</td></tr>
+      <tr><td>JS heap after the desktop sweep</td><td class="num">52.2 MB</td><td><code>performance.memory.usedJSHeapSize</code>.</td></tr>
+      <tr><td>Unobstructed map on a phone with routes up</td><td class="num">70%</td><td>The area between the top card and the sheet, over the 390×844 viewport. Before: about 25%, measured on the baseline screenshot.</td></tr>
+      <tr><td>Production bundle</td><td class="num">1.30 MB (364 kB gz)</td><td><code>vite build</code>, one chunk, mostly MapLibre. Vite warns that it is over 500 kB.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="fixed">
+  <h2>Fixed in this pass</h2>
+  <p class="intro">Everything a user would see, found by looking at the baseline screenshots or by a failing check, with the cause traced in code.</p>
+  <div class="table-box"><table>
+    <thead><tr><th>Issue</th><th>Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td>Arrival never fired on real routes: the banner sat at "0 m" at the destination</td><td>OSRM's final "arrive" step is zero-length, and the step before it stays inside the 60 m lock radius, so the lock never reached the last step</td><td>Also arrive when the snapped fix is within 40 m of the route end (<code>useNavigation.ts</code>)</td></tr>
+      <tr><td>The nav map rotated only when the phone reported a compass heading</td><td>Bearing came straight from <code>coords.heading</code>, which is null on most phone browsers at low speed</td><td>Fall back to the road's bearing at the snapped point, then to movement between fixes</td></tr>
+      <tr><td>Imminent-camera ring (and route layers) sometimes not drawn</td><td>Updates were guarded by <code>isStyleLoaded()</code>, which is false while any source loads, and were dropped rather than retried</td><td><code>whenStyleReady</code>: apply once the style has loaded</td></tr>
+      <tr><td>Seven thin route lines; cameras on the route hidden under it</td><td>Every route drawn at a fixed 4–5 px, added above the camera layer</td><td>Selected + 2 alternatives, zoom-scaled 3-layer line, layers beneath cameras, exposed cameras on top</td></tr>
+      <tr><td>Destination looked like a verified camera; origin looked like the live-position dot</td><td>Red and blue filled circles</td><td>Dark teardrop pin and a hollow ring</td></tr>
+      <tr><td>Suggestion lists popped open over the map on shared links and map taps</td><td>The debounced search ran on any value change and opened the list without focus</td><td>Search and open only while the field has focus; a picked label is not re-queried</td></tr>
+      <tr><td>Idle, disabled Find button showed a loading spinner</td><td>Spinner CSS keyed on <code>:disabled</code></td><td>Keyed on <code>aria-busy</code></td></tr>
+      <tr><td>Navigate sat below every route card</td><td>Actions rendered after the list</td><td>Start in the peek; Navigate and Share above the list</td></tr>
+      <tr><td>Phone: map about 25% visible with routes up</td><td>The full editor stayed open</td><td>Compact two-line trip summary: 70%</td></tr>
+      <tr><td>Phone: floating buttons overlapped Find and the top card; attribution under the sheet</td><td>Fixed at <code>top: 50%</code> and the map's bottom-right corner</td><td>Anchored above the measured sheet height</td></tr>
+      <tr><td>Phone: Find hidden behind the sheet with options open</td><td>Card max-height assumed a 220 px sheet</td><td>Max-height derived from <code>--gm-sheet-h</code></td></tr>
+      <tr><td>A route landing collapsed the editor while the user was changing options</td><td>Collapse on every planned result</td><td>Collapse only if the editor was untouched since the request started</td></tr>
+      <tr><td>Route fitted under the panels</td><td>Even 60 px fit padding</td><td>Padding from the panels' live rectangles plus pin headroom</td></tr>
+      <tr><td>3D toggle pushed up to 8.2% of the route and the pin off a phone screen</td><td>The toggle tilted without refitting</td><td>Refit on every tilt change</td></tr>
+      <tr><td>In 3D a long trip spanned only about a third of the free screen (310 of 900 px)</td><td>A 60° tilt foreshortens north–south lines, and the corner-based fit does not zoom in to compensate</td><td>45° tilt plus <code>fitLine</code>: project, then correct zoom and centre. Desktop 3D zoom went from 12.0 to 12.8 on the same trip.</td></tr>
+      <tr><td>Two route chips overlapped in the tilted phone view</td><td>Anchors are spread on the ground, but perspective compresses distance</td><td>Screen-space declutter after every move</td></tr>
+      <tr><td>A tap on an alternative near a camera did nothing; a camera tap could move an endpoint</td><td>Cameras were tested first with an 8 px box; the old click handler had no hit test (from code reading)</td><td>One hit test: the exact-point feature wins, the box catches near misses on lines only</td></tr>
+      <tr><td>Look-ahead padding persisted after leaving navigation</td><td>The route refit interrupted the padding ease</td><td><code>setPadding</code> at once on exit</td></tr>
+      <tr><td>"Head left onto Rainey Street", "Arrive at destination onto Curve Street"</td><td>OSRM's depart modifier is relative to a heading the driver doesn't have yet</td><td>Compass from <code>bearing_after</code>; "Arrive at Curve Street, destination on the right"</td></tr>
+      <tr><td>Coordinates as place names ("30.2500, -97.75…")</td><td>No reverse geocoding</td><td>Nominatim reverse (Photon /reverse has no CORS)</td></tr>
+      <tr><td>Demo-mode notice truncated with "…"; "heur" pill on every card; card times cut to "+4 …"</td><td>Line clamp, per-card fallback chip, nowrap subline</td><td>Shorter copy that wraps; chip removed (stated once in the header); cards wrap</td></tr>
+      <tr><td><code>scripts/verify-nav-browser.mjs</code> went stale against the new phone flow</td><td>It expected a flat nav view and the full card after navigation</td><td>Updated for the tilt and the trip summary. It also hit an orphaned Vite on port 5199 from an earlier run; the run commands now clear the port.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="roadmap">
+  <h2>Roadmap</h2>
+  <p class="intro">Ranked by how much each item helps someone actually drive a camera-avoiding route on a phone. Size: S under half a day, M 1–2 days, L most of a week.</p>
+  <div class="tier">
+    <h3>P1 · Prove it in a car <small>do next</small></h3>
+    <div class="items">
+      <div class="item"><h4>P1-1 · Real-phone drive over HTTPS</h4><dl><dt>Evidence</dt><dd>All 30 navigation checks used emulated GPS. <code>useGeoPosition</code> now refuses insecure origins, so a LAN dev server cannot be driven at all.</dd><dt>Approach</dt><dd>Deploy a preview (Vercel or a Cloudflare tunnel to <code>vite --host</code>) and drive one short loop on iOS Safari and Android Chrome with voice on. Record fix rate, accuracy and heading availability, then tune <code>SNAP_M</code> and <code>OFF_ROUTE_M</code> from the data.</dd><dt>Size</dt><dd class="effort">S</dd></dl></div>
+      <div class="item"><h4>P1-2 · Time-based camera alerts</h4><dl><dt>Evidence</dt><dd>A fixed 500 m window (<code>CAMERA_ALERT_M</code>) is about 15 s at highway speed and a minute in town.</dd><dt>Approach</dt><dd>Alert at about 20 s ahead using <code>speedMps</code> (or the route's own step speeds when GPS speed is null), with 300 m as the floor.</dd><dt>Size</dt><dd class="effort">S</dd></dl></div>
+      <div class="item"><h4>P1-3 · Smooth the puck between fixes</h4><dl><dt>Evidence</dt><dd>Phones deliver about 1 fix per second, and the puck jumps from one to the next (the video compresses this).</dd><dt>Approach</dt><dd>Dead-reckon along the route at the last speed in a rAF loop, snapped with <code>projectOnRoute</code>, and correct on each fix.</dd><dt>Size</dt><dd class="effort">M</dd></dl></div>
+    </div>
+  </div>
+  <div class="tier">
+    <h3>P2 · Driving comfort <small>after a real drive</small></h3>
+    <div class="items">
+      <div class="item"><h4>P2-1 · Lane and exit guidance</h4><dl><dt>Evidence</dt><dd>The I-35 step reads "Turn left onto North Interstate 35" with no lane or ramp hint.</dd><dt>Approach</dt><dd>Carry OSRM <code>intersections[].lanes</code> and exit numbers into <code>RouteStep</code> (additive) and draw lane arrows in the maneuver card.</dd><dt>Size</dt><dd class="effort">M</dd></dl></div>
+      <div class="item"><h4>P2-2 · Night map style</h4><dl><dt>Evidence</dt><dd>The Voyager basemap is bright and stays light in a dark car.</dd><dt>Approach</dt><dd>Switch to CARTO Dark Matter when <code>prefers-color-scheme</code> is dark or after sunset during navigation; re-tune the route palette for it.</dd><dt>Size</dt><dd class="effort">M</dd></dl></div>
+      <div class="item"><h4>P2-3 · Split the 1.3 MB bundle</h4><dl><dt>Evidence</dt><dd><code>vite build</code> warns: one 1,298 kB chunk.</dd><dt>Approach</dt><dd>Lazy-load MapLibre behind the shell and split the options/BYOK panel out; measure time to first map on a throttled phone profile.</dd><dt>Size</dt><dd class="effort">S</dd></dl></div>
+    </div>
+  </div>
+  <div class="tier">
+    <h3>P3 · Beyond the browser <small>when the web limits bite</small></h3>
+    <div class="items">
+      <div class="item"><h4>P3-1 · Background guidance</h4><dl><dt>Evidence</dt><dd>A web page loses GPS when the tab is hidden; the wake lock only prevents sleep.</dd><dt>Approach</dt><dd>Wrap in Capacitor with a background-location plugin, keeping the same React app and <code>useNavigation</code>.</dd><dt>Size</dt><dd class="effort">L</dd></dl></div>
+      <div class="item"><h4>P3-2 · Offline trip pack</h4><dl><dt>Evidence</dt><dd>A reroute needs the network, and tiles stream live.</dd><dt>Approach</dt><dd>Prefetch the route corridor's tiles and the trip's cameras into a service-worker cache when navigation starts.</dd><dt>Size</dt><dd class="effort">M</dd></dl></div>
+    </div>
+  </div>
+  <div class="callout"><strong>Not yet tested:</strong> physical phones and real GPS noise; iOS Safari (compass heading, wake lock and speech synthesis behave differently there); tunnels and long highway trips; walking and cycling navigation; live JEV ranking (no key in this run); a self-hosted OSRM backend; Firefox.</div>
+</section>
+
+<section id="run">
+  <h2>Run &amp; reproduce</h2>
+<pre class="cmd">npm install
+npm run dev:server &amp;          # API on :8801 (loads 142,677 cameras)
+npm run dev:client &amp;          # app on :5174
+npm test &amp;&amp; npm run typecheck &amp;&amp; npm run build
+
+# blueprint harness: one after another, never in parallel
+for s in sweep routes navigation; do node tools/blueprint/$s.mjs || echo "$s FAILED"; done
+lsof -tiTCP:5199 -sTCP:LISTEN | xargs kill 2&gt;/dev/null; npm run verify:nav
+node tools/blueprint/rows.mjs docs/blueprint/ghost-route-blueprint.html   # refresh the tables
+
+# drive it on a real phone (location needs HTTPS)
+npx vite --host --port 5174 --config client/vite.config.ts &amp;
+cloudflared tunnel --url http://localhost:5174   # open the https URL on the phone</pre>
+  <p class="muted">Raw evidence lands in <code>blueprint-out/</code> (gitignored): <code>ui/</code>, <code>render/</code>, <code>nav/</code>, <code>video/</code>, and <code>data/report-*.json</code> plus <code>nav-trace.json</code> with every fix's heading, bearing and distances.</p>
+</section>
+</main>
+</div>

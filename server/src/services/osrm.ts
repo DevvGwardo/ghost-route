@@ -64,6 +64,13 @@ function cap(s: string): string {
   return s.length === 0 ? s : s[0].toUpperCase() + s.slice(1);
 }
 
+const COMPASS = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
+
+function compass(bearing: number | undefined): string | null {
+  if (typeof bearing !== "number" || !Number.isFinite(bearing)) return null;
+  return COMPASS[Math.round((((bearing % 360) + 360) % 360) / 45) % 8];
+}
+
 function num(v: number | undefined): number {
   return typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : 0;
 }
@@ -74,6 +81,7 @@ export function buildInstruction(
   name: string,
   ref?: string,
   destinations?: string,
+  bearingAfter?: number,
 ): string {
   const target = ref || name;
   const suffix = target
@@ -82,14 +90,17 @@ export function buildInstruction(
       ? ` toward ${destinations}`
       : "";
   if (type === "arrive") {
-    let out = "Arrive at destination";
-    if (target) out += ` onto ${target}`;
-    if (modifier === "left" || modifier === "right") out += ` on the ${modifier}`;
+    let out = target ? `Arrive at ${target}` : "Arrive at destination";
+    if (modifier === "left" || modifier === "right") out += `, destination on the ${modifier}`;
     return out;
   }
   if (type === "depart") {
-    if (modifier) return `Head ${modifier}${suffix}`;
-    return `Head${suffix}`;
+    // OSRM's depart modifier is relative to a heading the driver does not
+    // have yet ("Head left onto…"). The absolute bearing reads correctly.
+    const dir = compass(bearingAfter);
+    const on = target ? ` on ${target}` : suffix;
+    if (dir) return `Head ${dir}${on}`;
+    return `Head${on}`;
   }
   if (
     type === "roundabout" ||
@@ -118,7 +129,7 @@ export function buildInstruction(
 }
 
 interface RawStep {
-  maneuver?: { type?: string; modifier?: string };
+  maneuver?: { type?: string; modifier?: string; bearing_after?: number };
   name?: string;
   ref?: string;
   destinations?: string;
@@ -176,7 +187,7 @@ export function buildSteps(legs: { steps?: RawStep[] }[] | undefined): RouteStep
     const roadName = s.ref || name || undefined;
     const maneuverKind = toManeuverKind(type, modifier);
     steps.push({
-      instruction: buildInstruction(type, modifier, name, s.ref, s.destinations),
+      instruction: buildInstruction(type, modifier, name, s.ref, s.destinations, s.maneuver?.bearing_after),
       maneuver: modifier ? `${type} ${modifier}` : type,
       distanceM: num(s.distance),
       durationS: num(s.duration),

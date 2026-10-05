@@ -7,3 +7,6 @@ runs/
 # Vendored maplibre worker (rebuilt by postinstall — see scripts/copy-maplibre-worker.mjs)
 client/public/gr-map-worker.mjs
 client/public/gr-map-shared.mjs
+
+# Blueprint harness raw evidence (tools/blueprint)
+blueprint-out/

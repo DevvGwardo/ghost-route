@@ -19,6 +19,9 @@ export interface NavRouteInput {
   coordinates: [number, number][];
   steps: NavStep[];
   exposures: NavExposure[];
+  /** Route totals from the server, used for time remaining / ETA. */
+  distanceM?: number;
+  durationS?: number;
 }
 
 const EARTH_M = 6371000;
@@ -207,4 +210,127 @@ export function createOffRouteTracker(opts?: {
       return misses;
     },
   };
+}
+
+// ---------------------------------------------------------------- snapping
+// Live guidance needs more than "nearest vertex": the puck should sit ON the
+// road between vertices, the camera should face along the road even when the
+// device reports no heading (most phones, whenever speed is low), and the trip
+// bar needs distance remaining from the exact projected point.
+
+/** A fix projected onto the route polyline. */
+export interface RouteProjection {
+  /** Segment index i (between coords[i] and coords[i+1]). */
+  segIdx: number;
+  /** Position along that segment, 0..1. */
+  t: number;
+  /** The projected point, [lat, lon]. */
+  point: [number, number];
+  /** Perpendicular distance from the fix to the route, meters. */
+  distM: number;
+  /** Meters from the route start to the projected point. */
+  alongM: number;
+}
+
+/** Puck snaps onto the route inside this distance; beyond it, raw GPS shows. */
+export const SNAP_M = 30;
+
+/** Cumulative meters at each vertex (cum[0] = 0, cum[n-1] = length). */
+export function cumulativeM(coords: [number, number][]): number[] {
+  const cum = new Array<number>(coords.length).fill(0);
+  for (let i = 1; i < coords.length; i++) cum[i] = cum[i - 1] + havM(coords[i - 1], coords[i]);
+  return cum;
+}
+
+/** Initial compass bearing a → b in degrees (0 = north, clockwise). */
+export function bearingDeg(a: [number, number], b: [number, number]): number {
+  const la1 = a[0] * DEG;
+  const la2 = b[0] * DEG;
+  const dLon = (b[1] - a[1]) * DEG;
+  const y = Math.sin(dLon) * Math.cos(la2);
+  const x = Math.cos(la1) * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(dLon);
+  return ((Math.atan2(y, x) / DEG) % 360 + 360) % 360;
+}
+
+/**
+ * Project p onto the polyline. `cum` (from cumulativeM) is optional; pass it
+ * when projecting many fixes against one route.
+ */
+export function projectOnRoute(
+  coords: [number, number][],
+  p: [number, number],
+  cum: number[] = cumulativeM(coords),
+): RouteProjection | null {
+  if (coords.length === 0) return null;
+  if (coords.length === 1) {
+    return { segIdx: 0, t: 0, point: coords[0], distM: havM(p, coords[0]), alongM: 0 };
+  }
+  let best: RouteProjection | null = null;
+  for (let i = 0; i + 1 < coords.length; i++) {
+    const a = coords[i];
+    const b = coords[i + 1];
+    const refLat = (a[0] + b[0]) / 2;
+    const kx = DEG * EARTH_M * Math.cos(refLat * DEG);
+    const ky = DEG * EARTH_M;
+    const dx = (b[1] - a[1]) * kx;
+    const dy = (b[0] - a[0]) * ky;
+    const px = (p[1] - a[1]) * kx;
+    const py = (p[0] - a[0]) * ky;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, (px * dx + py * dy) / len2));
+    const d = Math.hypot(px - t * dx, py - t * dy);
+    if (!best || d < best.distM) {
+      best = {
+        segIdx: i,
+        t,
+        point: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t],
+        distM: d,
+        alongM: cum[i] + (cum[i + 1] - cum[i]) * t,
+      };
+    }
+  }
+  return best;
+}
+
+/**
+ * Travel bearing of the route at a projection, measured over a short
+ * look-ahead so a tiny kink in the geometry does not swing the camera.
+ */
+export function routeBearingAt(
+  coords: [number, number][],
+  proj: RouteProjection,
+  lookAheadM = 25,
+): number | null {
+  if (coords.length < 2) return null;
+  let remaining = lookAheadM;
+  let from = proj.point;
+  let i = proj.segIdx + 1;
+  let to = coords[Math.min(i, coords.length - 1)];
+  while (i < coords.length - 1 && havM(from, to) < remaining) {
+    remaining -= havM(from, to);
+    from = to;
+    i += 1;
+    to = coords[i];
+  }
+  // At the very end of the route fall back to the last segment's direction.
+  if (havM(proj.point, to) < 0.5) {
+    const n = coords.length;
+    return bearingDeg(coords[n - 2], coords[n - 1]);
+  }
+  return bearingDeg(proj.point, to);
+}
+
+/**
+ * Seconds left, scaled from the route's own duration by distance remaining.
+ * OSRM durations already encode road speeds, so this beats a flat km/h guess.
+ */
+export function remainingSeconds(remainingM: number, totalM: number, totalS: number): number {
+  if (!(totalM > 0) || !(totalS > 0) || !Number.isFinite(remainingM)) return 0;
+  return Math.max(0, totalS * Math.min(1, Math.max(0, remainingM / totalM)));
+}
+
+/** Signed smallest difference b - a between two bearings, in (-180, 180]. */
+export function bearingDelta(a: number, b: number): number {
+  const d = (((b - a) % 360) + 540) % 360 - 180;
+  return d === -180 ? 180 : d;
 }

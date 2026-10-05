@@ -73,6 +73,11 @@ function PlaceField({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [highlight, setHighlight] = useState(-1);
   const seqRef = useRef(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  // The label a pick just wrote: echoing it back as a query would reopen the
+  // list the pick just closed.
+  const pickedRef = useRef<string | null>(null);
+  const focused = () => typeof document !== 'undefined' && document.activeElement === inputRef.current;
 
   const empty = value.trim().length === 0;
   // With no query typed, offer recents rather than nothing at all.
@@ -90,6 +95,9 @@ function PlaceField({
 
   // Debounced autocomplete dropdown. searchPlaces() never throws and takes
   // no AbortSignal, so stale responses are dropped via sequence guard.
+  // Only for text the user is typing: a value set from outside (map tap,
+  // shared link, reverse-geocoded label, a picked suggestion) must not pop a
+  // dropdown over the map — or spend a geocoder request — while unfocused.
   useEffect(() => {
     const q = value.trim();
     if (q.length < 3) {
@@ -98,20 +106,27 @@ function PlaceField({
       setHighlight(-1);
       return;
     }
+    if (!focused() || value === pickedRef.current) {
+      setSuggestions([]);
+      setOpen(false);
+      return;
+    }
     const t = window.setTimeout(() => {
       const seq = ++seqRef.current;
       void searchPlaces(q).then((list) => {
         if (seqRef.current !== seq) return; // stale — newer query in flight
         setSuggestions(list);
         setHighlight(-1);
-        setOpen(list.length > 0);
+        setOpen(list.length > 0 && focused());
       });
     }, 350);
     return () => window.clearTimeout(t);
   }, [value]);
 
   function pick(s: Suggestion) {
-    onPick({ lat: s.lat, lon: s.lon }, s.sublabel ? fullLabel(s) : s.label);
+    const label = s.sublabel ? fullLabel(s) : s.label;
+    pickedRef.current = label;
+    onPick({ lat: s.lat, lon: s.lon }, label);
     setOpen(false);
     setSuggestions([]);
   }
@@ -147,6 +162,7 @@ function PlaceField({
           {label}
         </label>
         <input
+          ref={inputRef}
           id={id}
           type="text"
           role="combobox"

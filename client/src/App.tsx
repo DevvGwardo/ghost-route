@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Layers, LocateFixed } from 'lucide-react';
-import MapView, { type RecenterSignal } from './components/MapView';
+import MapView, { type FitPadding, type RecenterSignal } from './components/MapView';
 import DirectionsCard from './components/DirectionsCard';
 import NavigateBanner from './components/NavigateBanner';
+import NavTripBar from './components/NavTripBar';
 import RouteSheet, { type CleanSearch } from './components/RouteSheet';
+import TripSummary from './components/TripSummary';
+import { reverseGeocode } from './lib/geocode';
+import { useWakeLock } from './lib/useWakeLock';
 import { ApiError, getCameras, getHealth, getSystemStatus, isAbortError, postRoute } from './lib/api';
 import { createRequestGuard, type RequestGuard } from './lib/requestGuard';
 import { useNavigation } from './lib/useNavigation';
@@ -35,6 +39,26 @@ const REROUTE_COOLDOWN_MS = 15_000;
 const REROUTE_BACKOFF_MAX_MS = 120_000;
 
 const coordLabel = (p: LatLon): string => `${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`;
+
+/** Phone/tablet layout: one column, floating card on top, sheet at the bottom. */
+const NARROW_QUERY = '(max-width: 1023px)';
+
+function useMediaQuery(query: string): boolean {
+  const get = () =>
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia(query).matches
+      : false;
+  const [matches, setMatches] = useState(get);
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mq = window.matchMedia(query);
+    const on = () => setMatches(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [query]);
+  return matches;
+}
 
 // Camera refetches are skipped while the viewport stays inside the last
 // fetched bbox plus padding. Pitched (3D) pans sweep a wider ground area and
@@ -127,6 +151,17 @@ export default function App() {
   const [navigating, setNavigating] = useState(false);
   const [followUser, setFollowUser] = useState(true);
   const [rerouting, setRerouting] = useState(false);
+  // Phone layout collapses the directions card to a two-line summary once
+  // routes are on screen; editing brings the full card back.
+  const narrow = useMediaQuery(NARROW_QUERY);
+  const [editingTrip, setEditingTrip] = useState(false);
+  // When the user last opened or touched the full editor: a result for a
+  // request that started BEFORE that must not collapse the card out from
+  // under them (e.g. Find, then changing an option while it loads).
+  const editOpenedAtRef = useRef(0);
+  const markEditing = useCallback(() => {
+    editOpenedAtRef.current = Date.now();
+  }, []);
   const camDebounceRef = useRef<number | undefined>(undefined);
   const camAbortRef = useRef<AbortController | null>(null);
   // Padded bbox of the last completed cameras fetch; moveends inside it skip
@@ -241,7 +276,7 @@ export default function App() {
       try {
         const health = await getHealth();
         if (health.jev?.mode === 'fake') {
-          messages.push('Heuristic ranking — add a JEV key for AI scoring');
+          messages.push('Heuristic ranking (no JEV key)');
         }
       } catch {
         /* unreachable server: the route request surfaces the real error */
@@ -249,12 +284,12 @@ export default function App() {
       try {
         const status = await getSystemStatus();
         if (status.routingBackend === 'demo') {
-          messages.push('Public demo routing server — self-host OSRM for production');
+          messages.push('public demo router');
         }
       } catch {
         /* status is informational only */
       }
-      if (alive && messages.length > 0) setDegraded(messages.join(' · '));
+      if (alive && messages.length > 0) setDegraded(`Demo mode: ${messages.join(' · ')}`);
     })();
     return () => {
       alive = false;
@@ -278,6 +313,7 @@ export default function App() {
       const guard = (routeGuardRef.current ??= createRequestGuard());
       // Supersede anything in flight: this call owns the UI from here on.
       const ticket = guard.begin();
+      const startedAt = Date.now();
       setLoading(true);
       setError(null);
       try {
@@ -310,6 +346,7 @@ export default function App() {
           setGeoNotice(`No ${profile} graph on this server — showing driving directions.`);
         }
         if (opts?.record) {
+          if (editOpenedAtRef.current <= startedAt) setEditingTrip(false);
           // Remember the trip and make the current route a shareable link.
           // Only planned requests record: an off-route reroute starts from a
           // live GPS fix, which is not where the user asked to start.
@@ -422,13 +459,38 @@ export default function App() {
 
   // Map click/drag sets coords with no place label — mirror the coords into
   // the label so the search box never shows a stale place name.
-  const handleOriginChange = useCallback((p: LatLon) => {
-    setOrigin(p);
-    setOriginLabel(`${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`);
-  }, []);
-  const handleDestinationChange = useCallback((p: LatLon) => {
-    setDestination(p);
-    setDestinationLabel(`${p.lat.toFixed(4)}, ${p.lon.toFixed(4)}`);
+  // The street label replaces the coordinates only if the field still shows
+  // those coordinates — the user may have typed or picked something since.
+  const labelFromMap = useCallback(
+    (p: LatLon, set: (fn: (cur: string) => string) => void) => {
+      const coords = coordLabel(p);
+      set(() => coords);
+      void reverseGeocode(p.lat, p.lon).then((label) => {
+        if (label) set((cur) => (cur === coords ? label : cur));
+      });
+    },
+    [],
+  );
+  const handleOriginChange = useCallback(
+    (p: LatLon) => {
+      setOrigin(p);
+      labelFromMap(p, setOriginLabel);
+    },
+    [labelFromMap],
+  );
+  const handleDestinationChange = useCallback(
+    (p: LatLon) => {
+      setDestination(p);
+      labelFromMap(p, setDestinationLabel);
+    },
+    [labelFromMap],
+  );
+  // Shared links carry coordinates only: resolve readable labels once.
+  useEffect(() => {
+    if (!boot.link) return;
+    labelFromMap(boot.link.origin, setOriginLabel);
+    labelFromMap(boot.link.destination, setDestinationLabel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const swapEndpoints = useCallback(() => {
@@ -538,6 +600,8 @@ export default function App() {
     if (!navigating || !bestRoute) return null;
     return {
       coordinates: bestRoute.coordinates,
+      distanceM: bestRoute.distanceM,
+      durationS: bestRoute.durationS,
       steps: (bestRoute.steps ?? []).map((s) => ({
         coordinates: s.coordinates ?? [],
         instruction: s.instruction,
@@ -566,8 +630,77 @@ export default function App() {
     nextCam: nav.upcoming[0] ?? null,
   });
 
+  // Phones sleep after ~30 s untouched, which would stop GPS mid-drive.
+  useWakeLock(navigating);
+
+  // Where the route may be fitted: the map minus the panels floating on it.
+  // Read live at fit time (panel sizes change with content and viewport).
+  const getFitPadding = useCallback((): FitPadding => {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const rect = (sel: string) => document.querySelector(sel)?.getBoundingClientRect() ?? null;
+    const card = rect('.gm-topcard');
+    const sheet = rect('.gm-sheet');
+    const pad = 28;
+    // The destination pin and the route chips stand ~40px ABOVE their points,
+    // so the top edge needs that much more room than the others.
+    const above = 40;
+    if (!narrow) {
+      // Desktop: card + sheet form a left column; fit to its right.
+      const colRight = Math.max(card?.right ?? 0, sheet?.right ?? 0);
+      return { top: 64 + above, bottom: 64, left: colRight + 48, right: 88 };
+    }
+    return {
+      top: (card ? card.bottom : 0) + pad + above,
+      bottom: (sheet ? vh - sheet.top : 0) + pad,
+      left: pad,
+      right: Math.min(72, vw * 0.15),
+    };
+  }, [narrow]);
+
+  // The bottom panel's height as a CSS variable: the FABs and the map's own
+  // controls sit just above it instead of under it (or over the top card).
+  useEffect(() => {
+    const el = document.querySelector<HTMLElement>(navigating ? '.gm-tripbar' : '.gm-sheet');
+    const root = document.querySelector<HTMLElement>('.gm-root');
+    if (!el || !root || typeof ResizeObserver === 'undefined') return;
+    const sync = () => root.style.setProperty('--gm-sheet-h', `${Math.round(el.getBoundingClientRect().height)}px`);
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [navigating]);
+
+  const compactTrip = narrow && routes.length > 0 && !editingTrip && !navRoute;
+
+  // Automation hook (blueprint harness, tools/blueprint): read-only app state
+  // so scripts assert on what the app believes, not on pixels. Dev builds only.
+  if (import.meta.env.DEV) {
+    (window as unknown as { __ghost?: unknown }).__ghost = {
+      routes: routes.map((r) => r.id),
+      selectedId,
+      navigating,
+      compactTrip,
+      originLabel,
+      destinationLabel,
+      nav: {
+        arrived: nav.arrived,
+        remainingM: nav.remainingM,
+        remainingRouteM: nav.remainingRouteM,
+        remainingS: nav.remainingS,
+        heading: nav.puck?.heading ?? null,
+        puck: nav.puck ? { lat: nav.puck.lat, lon: nav.puck.lon } : null,
+        nextStep: nav.nextStep?.instruction ?? null,
+        upcoming: nav.upcoming,
+        offRoute: nav.offRoute,
+      },
+    };
+  }
+
   return (
-    <div className={`gm-root${sheetExpanded ? ' gm-sheet-open' : ''}`}>
+    <div
+      className={`gm-root${sheetExpanded ? ' gm-sheet-open' : ''}${navRoute ? ' gm-navigating' : ''}${compactTrip ? ' gm-compact' : ''}`}
+    >
       <main className="gm-map">
         <MapView
           origin={origin}
@@ -580,8 +713,11 @@ export default function App() {
           bufferMeters={bufferMeters}
           routes={routes}
           selectedId={selectedId}
+          onSelectRoute={setSelectedId}
+          getFitPadding={getFitPadding}
           recenter={recenter}
-          userPosition={nav.fix}
+          navigating={Boolean(navRoute)}
+          userPosition={nav.puck}
           followUser={followUser}
           onFollowUserChange={setFollowUser}
           nextManeuver={nav.nextManeuver}
@@ -589,13 +725,18 @@ export default function App() {
         />
       </main>
 
-      <header className="gm-topcard" aria-label="Directions">
+      <header
+        className={`gm-topcard${navRoute ? ' nav' : ''}${compactTrip ? ' compact' : ''}`}
+        aria-label="Directions"
+        onPointerDownCapture={!navRoute && !compactTrip ? markEditing : undefined}
+        onKeyDownCapture={!navRoute && !compactTrip ? markEditing : undefined}
+      >
         {/* In the card's own flow, not an overlay: an absolutely positioned
             notice sat UNDER the sheet, so its Dismiss click fell through to
             the sheet — which started navigation instead of dismissing.
             Hidden while navigating so it never pushes the maneuver banner
             down or crowds the driver. */}
-        {degraded && !degradedDismissed && !navRoute && (
+        {degraded && !degradedDismissed && !navRoute && !compactTrip && (
           <div className="gm-degraded" role="status">
             <span>{degraded}</span>
             <button
@@ -614,6 +755,7 @@ export default function App() {
             geoError={nav.geoError}
             arrived={nav.arrived}
             nextStep={nav.nextStep}
+            followingStep={nav.followingStep}
             remainingM={nav.remainingM}
             nextCam={nav.upcoming[0] ?? null}
             rerouting={rerouting}
@@ -621,7 +763,17 @@ export default function App() {
             voiceOn={voiceOn}
             onRecenter={() => setFollowUser(true)}
             onToggleVoice={() => setVoiceOn((v) => !v)}
-            onExit={stopNavigation}
+          />
+        ) : compactTrip ? (
+          <TripSummary
+            originLabel={originLabel}
+            destinationLabel={destinationLabel}
+            profile={profile}
+            onEdit={() => {
+              editOpenedAtRef.current = Date.now();
+              setEditingTrip(true);
+              setSheetExpanded(false);
+            }}
           />
         ) : (
           <DirectionsCard
@@ -640,7 +792,10 @@ export default function App() {
             setDestinationLabel(label);
           }}
           onSwap={swapEndpoints}
-          onBack={() => setSheetExpanded(false)}
+          onBack={() => {
+            setSheetExpanded(false);
+            setEditingTrip(false);
+          }}
           avoidFlock={avoidFlock}
           onAvoidFlockChange={setAvoidFlock}
           bufferMeters={bufferMeters}
@@ -669,6 +824,7 @@ export default function App() {
         )}
       </header>
 
+      {!navRoute && (
       <div className="gm-fabs">
         <button
           type="button"
@@ -690,6 +846,7 @@ export default function App() {
           <Layers size={20} />
         </button>
       </div>
+      )}
 
       {geoNotice && (
         <p className="gm-toast" role="status">
@@ -697,6 +854,14 @@ export default function App() {
         </p>
       )}
 
+      {navRoute ? (
+        <NavTripBar
+          remainingS={nav.remainingS}
+          remainingM={nav.remainingRouteM}
+          arrived={nav.arrived}
+          onExit={stopNavigation}
+        />
+      ) : (
       <RouteSheet
         routes={routes}
         selectedId={selectedId}
@@ -715,6 +880,7 @@ export default function App() {
         onShare={shareRoute}
         shareNotice={shareNotice}
       />
+      )}
 
     </div>
   );

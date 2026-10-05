@@ -7,10 +7,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ARRIVED_M,
+  SNAP_M,
+  bearingDeg,
   createOffRouteTracker,
+  cumulativeM,
   distToRoute,
+  havM,
   locateStep,
   nearestIndex,
+  projectOnRoute,
+  remainingSeconds,
+  routeBearingAt,
   upcomingCameras,
   type NavRouteInput,
   type NavStep,
@@ -39,6 +46,17 @@ export interface NavigationState {
   navCameras: LatLon[];
   /** True once the driver has been consistently off the planned route. */
   offRoute: boolean;
+  /**
+   * What the map should draw and follow: the fix snapped onto the road when
+   * close to it, with a usable heading even when the device reports none.
+   */
+  puck: GeoFix | null;
+  /** The maneuver after `nextStep` (for a "Then …" preview). */
+  followingStep: NavStep | null;
+  /** Meters left to the destination along the route (null before a fix). */
+  remainingRouteM: number | null;
+  /** Estimated seconds left, scaled from the route's own duration. */
+  remainingS: number | null;
 }
 
 export interface UseNavigationOpts {
@@ -97,19 +115,84 @@ export function useNavigation({ route, enabled, onOffRoute }: UseNavigationOpts)
     if (st.offRoute) onOffRouteRef.current?.(fix);
   }, [route, fix]);
 
+  // Snapping + heading. Device heading wins when the phone reports one;
+  // otherwise the road's own direction at the snapped point (on-route), then
+  // the direction of travel between fixes (off-route), then the last value.
+  const cum = useMemo(() => (route ? cumulativeM(route.coordinates) : []), [route]);
+  const prevFixRef = useRef<GeoFix | null>(null);
+  const headingRef = useRef<number | null>(null);
+  useEffect(() => {
+    prevFixRef.current = null;
+    headingRef.current = null;
+  }, [route]);
+  const projection = useMemo(
+    () => (route && fix ? projectOnRoute(route.coordinates, [fix.lat, fix.lon], cum) : null),
+    [route, fix, cum],
+  );
+  const puck = useMemo<GeoFix | null>(() => {
+    if (!fix) return null;
+    const onRoute = projection != null && projection.distM <= SNAP_M;
+    let heading: number | null = fix.heading;
+    if (heading == null && onRoute && route) heading = routeBearingAt(route.coordinates, projection);
+    if (heading == null) {
+      const prev = prevFixRef.current;
+      if (prev && havM([prev.lat, prev.lon], [fix.lat, fix.lon]) >= 5) {
+        heading = bearingDeg([prev.lat, prev.lon], [fix.lat, fix.lon]);
+      }
+    }
+    if (heading == null) heading = headingRef.current;
+    const [lat, lon] = onRoute ? projection.point : [fix.lat, fix.lon];
+    return { ...fix, lat, lon, heading };
+  }, [fix, projection, route]);
+  useEffect(() => {
+    if (!fix) return;
+    if (puck?.heading != null) headingRef.current = puck.heading;
+    const prev = prevFixRef.current;
+    if (!prev || havM([prev.lat, prev.lon], [fix.lat, fix.lon]) >= 5) prevFixRef.current = fix;
+  }, [fix, puck]);
+
+  const remainingRouteM = useMemo(() => {
+    if (!projection || cum.length === 0) return null;
+    return Math.max(0, cum[cum.length - 1] - projection.alongM);
+  }, [projection, cum]);
+  const remainingS = useMemo(() => {
+    if (remainingRouteM == null || !route) return null;
+    const totalM = route.distanceM && route.distanceM > 0 ? route.distanceM : cum[cum.length - 1] ?? 0;
+    // No server duration (old fixtures): assume ~40 km/h urban driving.
+    const totalS = route.durationS && route.durationS > 0 ? route.durationS : totalM / 11;
+    return remainingSeconds(remainingRouteM, totalM, totalS);
+  }, [remainingRouteM, route, cum]);
+
+  const lastIdx = route ? route.steps.length - 1 : 0;
+  // Two ways to arrive: the step lock reaches the final step (the original
+  // rule), or the snapped fix is within ARRIVED_M of the route's end. The
+  // second matters because OSRM's final "arrive" step is zero-length: the
+  // step before it stays inside STEP_LOCK_M at the destination and wins the
+  // lock, so the first rule alone never fired on real routes.
+  const arrived = Boolean(
+    route &&
+      ((locked >= lastIdx && remainingM != null && remainingM <= ARRIVED_M) ||
+        (remainingRouteM != null &&
+          remainingRouteM <= ARRIVED_M &&
+          projection != null &&
+          projection.distM <= SNAP_M)),
+  );
+
   const userIdx = useMemo(
     () => (route && fix ? nearestIndex(route.coordinates, [fix.lat, fix.lon]).index : 0),
     [route, fix],
   );
 
-  const lastIdx = route ? route.steps.length - 1 : 0;
-  const arrived = Boolean(
-    route && locked >= lastIdx && remainingM != null && remainingM <= ARRIVED_M,
-  );
 
   const nextStep = useMemo(() => {
     if (!route || arrived) return null;
     return route.steps[Math.min(locked + 1, lastIdx)] ?? null;
+  }, [route, arrived, locked, lastIdx]);
+
+  const followingStep = useMemo(() => {
+    if (!route || arrived) return null;
+    const i = locked + 2;
+    return i <= lastIdx ? route.steps[i] ?? null : null;
   }, [route, arrived, locked, lastIdx]);
 
   const nextManeuver = useMemo<LatLon | null>(() => {
@@ -145,5 +228,9 @@ export function useNavigation({ route, enabled, onOffRoute }: UseNavigationOpts)
     upcoming,
     navCameras,
     offRoute,
+    puck,
+    followingStep,
+    remainingRouteM,
+    remainingS,
   };
 }

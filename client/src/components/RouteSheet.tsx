@@ -48,6 +48,17 @@ function fmtDur(s: number): string {
   return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, '0')} min`;
 }
 
+function fmtArrive(durationS: number): string {
+  try {
+    return new Date(Date.now() + durationS * 1000).toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  } catch {
+    return '';
+  }
+}
+
 function fmtTimeDiff(s: number, fastest: number): string {
   if (!(s > fastest)) return 'fastest';
   const mins = Math.round((s - fastest) / 60);
@@ -98,6 +109,7 @@ function SeenRiskCompact({ route }: { route: SheetRoute }) {
     <span className={`gm-seen-compact ${tone}`} aria-label={`Seen risk ${Math.round(risk.p * 100)} percent`}>
       <Icon size={14} aria-hidden="true" />
       <span className="gm-tabular">{Math.round(risk.p * 100)}%</span>
+      <span className="gm-seen-word">seen</span>
     </span>
   );
 }
@@ -118,13 +130,9 @@ function ExposureBadge({ count }: { count: number }) {
 }
 
 function JevChip({ jev }: { jev: SheetJev }) {
-  if (jev.fallbackUsed) {
-    return (
-      <span className="gm-jevs muted" title="Heuristic score — add a Jev key for AI ranking">
-        heur
-      </span>
-    );
-  }
+  // Heuristic ranking is the same for every card and already stated once in
+  // the sheet header; a per-card "heur" pill was noise.
+  if (jev.fallbackUsed) return null;
   return (
     <span className="gm-jevs" title={`Jev choice ${jev.choice}`}>
       {Math.round(jev.confidence * 100)}%
@@ -301,22 +309,36 @@ export default function RouteSheet(props: RouteSheetProps) {
         )}
 
         {!loading && best && !expanded && (
-          <button type="button" className="gm-peek" onClick={onToggle} aria-label="Show all routes">
-            <span className="gm-peek-main">
-              <span className="gm-duration">{fmtDur(best.durationS)}</span>
-              <span className="gm-subline">
-                {fmtKm(best.distanceM)}
-                {best.exposureCount === 0
-                  ? ' · no exposures'
-                  : ` · ${best.exposureCount} exposure${best.exposureCount === 1 ? '' : 's'}`}
+          <div className="gm-peek-row">
+            <button type="button" className="gm-peek" onClick={onToggle} aria-label="Show all routes">
+              <span className="gm-peek-main">
+                <span className="gm-duration">{fmtDur(best.durationS)}</span>
+                <span className="gm-subline">
+                  {fmtKm(best.distanceM)} · arrive {fmtArrive(best.durationS)}
+                </span>
               </span>
-            </span>
-            <span className="gm-peek-badges">
-              <ExposureBadge count={best.exposureCount} />
-              <SeenRiskCompact route={best} />
-              <JevChip jev={best.jev} />
-            </span>
-          </button>
+              <span className="gm-peek-badges">
+                <ExposureBadge count={best.exposureCount} />
+                <SeenRiskCompact route={best} />
+                <JevChip jev={best.jev} />
+              </span>
+            </button>
+            {onToggleNavigate && (
+              // The primary action, reachable without expanding the sheet or
+              // scrolling past every alternative (it used to sit below them).
+              <button
+                type="button"
+                className="gm-start-btn"
+                aria-label="Start navigation"
+                disabled={!canNavigate}
+                title={canNavigate ? 'Start turn-by-turn navigation' : 'Navigation needs a route with turn steps'}
+                onClick={onToggleNavigate}
+              >
+                <Navigation size={18} aria-hidden="true" />
+                Start
+              </button>
+            )}
+          </div>
         )}
 
         {!loading && best && expanded && (
@@ -331,6 +353,43 @@ export default function RouteSheet(props: RouteSheetProps) {
             ) : (
               <p className="gm-sheet-meta">Ranked by fewest cameras · add a Jev key for AI ranking</p>
             )}
+          <div className="gm-detail-actions">
+            {onToggleNavigate && (
+              <button
+                type="button"
+                className="gm-empty-btn"
+                aria-pressed={navigating}
+                disabled={!navigating && !canNavigate}
+                title={
+                  navigating
+                    ? 'Stop turn-by-turn navigation'
+                    : canNavigate
+                      ? 'Start turn-by-turn navigation with camera alerts'
+                      : 'Navigation needs a route with turn steps'
+                }
+                onClick={onToggleNavigate}
+              >
+                <Navigation size={16} />
+                {navigating ? 'Stop navigation' : 'Navigate'}
+              </button>
+            )}
+            {onShare && (
+              <button
+                type="button"
+                className="gm-share-btn"
+                title="Copy a shareable link to this route"
+                onClick={onShare}
+              >
+                <Share2 size={16} />
+                Share
+              </button>
+            )}
+          </div>
+          {shareNotice && (
+            <p className="gm-sheet-meta" role="status">
+              {shareNotice}
+            </p>
+          )}
             <ol className="gm-route-list">
               {routes.map((r, i) => {
                 // Trust the server-derived flag — never recompute it here.
@@ -363,43 +422,6 @@ export default function RouteSheet(props: RouteSheetProps) {
             <div className="gm-selected-detail">
               <SeenRiskRow route={best} />
               <JevWhy route={best} live={jevLive} />
-              <div className="gm-detail-actions">
-                {onToggleNavigate && (
-                  <button
-                    type="button"
-                    className="gm-empty-btn"
-                    aria-pressed={navigating}
-                    disabled={!navigating && !canNavigate}
-                    title={
-                      navigating
-                        ? 'Stop turn-by-turn navigation'
-                        : canNavigate
-                          ? 'Start turn-by-turn navigation with camera alerts'
-                          : 'Navigation needs a route with turn steps'
-                    }
-                    onClick={onToggleNavigate}
-                  >
-                    <Navigation size={16} />
-                    {navigating ? 'Stop navigation' : 'Navigate'}
-                  </button>
-                )}
-                {onShare && (
-                  <button
-                    type="button"
-                    className="gm-share-btn"
-                    title="Copy a shareable link to this route"
-                    onClick={onShare}
-                  >
-                    <Share2 size={16} />
-                    Share
-                  </button>
-                )}
-              </div>
-              {shareNotice && (
-                <p className="gm-sheet-meta" role="status">
-                  {shareNotice}
-                </p>
-              )}
               <CompareTable routes={routes} selectedId={selectedId} />
               <TurnSteps steps={best.steps} />
             </div>

@@ -2,7 +2,11 @@
   "name": "ghost-route",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["server", "client", "shared"],
+  "workspaces": [
+    "server",
+    "client",
+    "shared"
+  ],
   "scripts": {
     "postinstall": "node scripts/copy-maplibre-worker.mjs",
     "dev:server": "npm run dev -w server",
@@ -13,6 +17,7 @@
     "typecheck": "npx tsc --noEmit -p shared && npx tsc --noEmit -p server && npx tsc --noEmit -p client"
   },
   "devDependencies": {
+    "playwright": "^1.63.0",
     "typescript": "^5.6.3",
     "vitest": "^2.1.8"
   }

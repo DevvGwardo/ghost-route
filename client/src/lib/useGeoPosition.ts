@@ -102,6 +102,13 @@ export function useGeoPosition(enabled: boolean): GeoPositionState {
       setError(null);
       return;
     }
+    // Phones opening the dev server over the LAN (http://192.168…) get a
+    // silent permission denial: browsers only expose GPS to secure contexts.
+    // Say so instead of waiting forever on "Acquiring GPS…".
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
+      setError('Live location needs HTTPS. Open Ghost Route over https:// to navigate.');
+      return;
+    }
     const provider = getGeoProvider();
     if (!provider) {
       setError('Geolocation is not available in this browser.');

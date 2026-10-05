@@ -596,7 +596,9 @@ async function main() {
     );
     check('bearing follows the GPS heading (90deg)', approx(s1.bearing, 90, 1.5), `bearing=${s1.bearing}`);
     check('follow mode zooms to street level', s1.zoom >= 16, `zoom=${s1.zoom}`);
-    check('flat viewport keeps pitch at 0 (no auto-3D on narrow screens)', approx(s1.pitch, 0, 0.5), `pitch=${s1.pitch}`);
+    // v1.3: navigation uses a tilted driving view on every screen size (the
+    // planning view still stays flat on narrow screens).
+    check('navigation tilts into the driving perspective (pitch 50)', approx(s1.pitch, 50, 1), `pitch=${s1.pitch}`);
 
     // 8. Marker rendering + heading applied to *rendering* --------------------
     const markers = await evaluate(`(() => {
@@ -881,8 +883,26 @@ async function main() {
       !(await evaluate(`Boolean(document.querySelector('.gm-degraded'))`)),
     );
     check('stopped navigation', await clickByAria('Stop navigation'));
+    // v1.3: on narrow screens a planned trip collapses to a two-line summary;
+    // tapping it reopens the full card. Every option step below reopens it
+    // (and the options panel) because each Find collapses it again.
+    const openEditor = async (withOptions = false) => {
+      if (await evaluate(`Boolean(document.querySelector('.gm-trip-summary'))`)) {
+        await clickSelector('.gm-trip-summary');
+        await sleep(250);
+      }
+      if (withOptions && !(await evaluate(`Boolean(document.querySelector('#gr-route-options'))`))) {
+        await clickSelector('.gm-options-toggle');
+        await sleep(250);
+      }
+    };
     check(
-      'directions card restored after stopping navigation',
+      'trip summary offered after stopping navigation (narrow screen)',
+      await waitForPage(`Boolean(document.querySelector('.gm-trip-summary'))`),
+    );
+    await openEditor();
+    check(
+      'directions card restored from the summary',
       await waitForPage(`Boolean(document.querySelector('.gm-options-toggle'))`),
     );
 
@@ -894,7 +914,7 @@ async function main() {
     check(
       'degraded notice explains the demo routing backend',
       await evaluate(
-        `/demo routing server/.test(document.querySelector('.gm-degraded')?.innerText ?? '')`,
+        `/demo router/.test(document.querySelector('.gm-degraded')?.innerText ?? '')`,
       ),
     );
     check('dismissed the degraded notice', await clickSelector('.gm-degraded-x'));
@@ -933,6 +953,7 @@ async function main() {
     );
 
     const beforeOpts = routeRequests.length;
+    await openEditor();
     check('picked the Walk profile', await clickButtonByText('Walk'));
     await sleep(1500);
     check(
@@ -949,8 +970,10 @@ async function main() {
     check('profile reaches the API as profile=walking', Boolean(walkReq), `profile=${walkReq?.profile}`);
 
     const beforeVerify = routeRequests.length;
+    await openEditor(true);
     check('enabled verified-cameras-only', await clickSelector('#gr-verified'), JSON.stringify(clickDiag));
-    check('clicked Find with the filter set', await clickButtonWhenReady('Find clean route'));
+    const findFilter = await clickButtonWhenReady('Find clean route');
+    check('clicked Find with the filter set', findFilter, findFilter ? '' : JSON.stringify(await evaluate(`({ btns: [...document.querySelectorAll('button')].map((b) => b.textContent.trim().slice(0, 24) + (b.disabled ? '(off)' : '')).filter(Boolean), summary: Boolean(document.querySelector('.gm-trip-summary')) })`)));
     const verifyReq = await waitForNewRequest(
       beforeVerify,
       (b) => b.cameraFilter?.verifiedOnly === true,
@@ -962,6 +985,7 @@ async function main() {
     );
 
     const beforeDir = routeRequests.length;
+    await openEditor(true);
     check('disabled direction filtering', await clickSelector('#gr-dir'), JSON.stringify(clickDiag));
     check('clicked Find after disabling direction filtering', await clickButtonWhenReady('Find clean route'));
     const dirReq = await waitForNewRequest(beforeDir, (b) => b.respectDirection === false);
@@ -973,8 +997,9 @@ async function main() {
 
     // ---- avoidance off: the sheet must say so, not "no clean route" -------
     const beforeAvoid = routeRequests.length;
+    await openEditor(true);
     check('turned camera avoidance off', await clickSelector('#gr-avoid'));
-    check('clicked Find with avoidance off', await clickButtonWhenReady('Find clean route'));
+    check('clicked Find with avoidance off', await clickButtonWhenReady('Find clean route'), JSON.stringify(clickDiag));
     await waitForNewRequest(beforeAvoid, (b) => b.avoidFlock === false);
     check(
       'avoidance-off is surfaced as its own state (not "no clean route")',
@@ -986,6 +1011,12 @@ async function main() {
     );
 
     // ---- share a link ------------------------------------------------------
+    // v1.3: reopening the trip editor on a narrow screen collapses the sheet
+    // (room for the card); Share lives in the expanded sheet.
+    if (await evaluate(`Boolean(document.querySelector('.gm-peek'))`)) {
+      await clickSelector('.gm-peek');
+      await sleep(300);
+    }
     const shareReady = await waitForPage(
       `[...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Share')`,
     );

@@ -21,50 +21,58 @@ import type { RouteStep as ContractRouteStep } from '../../../shared/src/types';
 export type ManeuverKind = NonNullable<ContractRouteStep['maneuverKind']>;
 export type RouteStep = ContractRouteStep;
 
-export function ManeuverIcon({ maneuver, maneuverKind }: { maneuver?: string; maneuverKind?: string }) {
+export function ManeuverIcon({
+  maneuver,
+  maneuverKind,
+  size = 18,
+}: {
+  maneuver?: string;
+  maneuverKind?: string;
+  size?: number;
+}) {
   const kind = (maneuverKind ?? '').toLowerCase().trim();
   if (kind) {
     if (kind === 'roundabout' || kind === 'rotary' || kind === 'circle')
-      return <RotateCw size={18} aria-hidden="true" />;
+      return <RotateCw size={size} aria-hidden="true" />;
     if (kind === 'arrive' || kind === 'finish' || kind === 'destination')
-      return <Flag size={18} aria-hidden="true" />;
-    if (kind === 'depart' || kind === 'start') return <Navigation size={18} aria-hidden="true" />;
+      return <Flag size={size} aria-hidden="true" />;
+    if (kind === 'depart' || kind === 'start') return <Navigation size={size} aria-hidden="true" />;
     if (kind === 'uturn' || kind === 'u-turn' || kind === 'u_turn')
-      return <RotateCcw size={18} aria-hidden="true" />;
+      return <RotateCcw size={size} aria-hidden="true" />;
     if (kind === 'exit' || kind === 'off-ramp' || kind === 'offramp')
-      return <LogOut size={18} aria-hidden="true" />;
-    if (kind === 'ferry' || kind === 'boat') return <Ship size={18} aria-hidden="true" />;
-    if (kind === 'merge' || kind === 'fork') return <Split size={18} aria-hidden="true" />;
-    if (kind === 'left') return <CornerUpLeft size={18} aria-hidden="true" />;
-    if (kind === 'right') return <CornerUpRight size={18} aria-hidden="true" />;
+      return <LogOut size={size} aria-hidden="true" />;
+    if (kind === 'ferry' || kind === 'boat') return <Ship size={size} aria-hidden="true" />;
+    if (kind === 'merge' || kind === 'fork') return <Split size={size} aria-hidden="true" />;
+    if (kind === 'left') return <CornerUpLeft size={size} aria-hidden="true" />;
+    if (kind === 'right') return <CornerUpRight size={size} aria-hidden="true" />;
     if (kind === 'keep' || kind === 'straight' || kind === 'continue')
-      return <MoveUp size={18} aria-hidden="true" />;
-    if (kind === 'pin' || kind === 'stop') return <MapPin size={18} aria-hidden="true" />;
-    return <Navigation size={18} aria-hidden="true" />;
+      return <MoveUp size={size} aria-hidden="true" />;
+    if (kind === 'pin' || kind === 'stop') return <MapPin size={size} aria-hidden="true" />;
+    return <Navigation size={size} aria-hidden="true" />;
   }
   const m = (maneuver ?? '').toLowerCase();
   if (m.includes('roundabout') || m.includes('rotary') || m.includes('circle'))
-    return <RotateCw size={18} aria-hidden="true" />;
+    return <RotateCw size={size} aria-hidden="true" />;
   if (m.includes('arriv') || m.includes('destination') || m.includes('finish'))
-    return <Flag size={18} aria-hidden="true" />;
-  if (m.includes('depart') || m.includes('start')) return <Navigation size={18} aria-hidden="true" />;
+    return <Flag size={size} aria-hidden="true" />;
+  if (m.includes('depart') || m.includes('start')) return <Navigation size={size} aria-hidden="true" />;
   if (m.includes('u-turn') || m.includes('u turn') || m.includes('uturn'))
-    return <RotateCcw size={18} aria-hidden="true" />;
+    return <RotateCcw size={size} aria-hidden="true" />;
   if (m.includes('exit') || m.includes('off-ramp') || m.includes('off ramp'))
-    return <LogOut size={18} aria-hidden="true" />;
-  if (m.includes('ferry') || m.includes('boat')) return <Ship size={18} aria-hidden="true" />;
-  if (m.includes('merge') || m.includes('fork')) return <Split size={18} aria-hidden="true" />;
-  if (m.includes('left')) return <CornerUpLeft size={18} aria-hidden="true" />;
-  if (m.includes('right')) return <CornerUpRight size={18} aria-hidden="true" />;
+    return <LogOut size={size} aria-hidden="true" />;
+  if (m.includes('ferry') || m.includes('boat')) return <Ship size={size} aria-hidden="true" />;
+  if (m.includes('merge') || m.includes('fork')) return <Split size={size} aria-hidden="true" />;
+  if (m.includes('left')) return <CornerUpLeft size={size} aria-hidden="true" />;
+  if (m.includes('right')) return <CornerUpRight size={size} aria-hidden="true" />;
   if (
     m.includes('straight') ||
     m.includes('continue') ||
     m.includes('ahead') ||
     m.includes('keep')
   )
-    return <MoveUp size={18} aria-hidden="true" />;
-  if (m.includes('pin') || m.includes('stop')) return <MapPin size={18} aria-hidden="true" />;
-  return <Navigation size={18} aria-hidden="true" />;
+    return <MoveUp size={size} aria-hidden="true" />;
+  if (m.includes('pin') || m.includes('stop')) return <MapPin size={size} aria-hidden="true" />;
+  return <Navigation size={size} aria-hidden="true" />;
 }
 
 function fmtStepDist(m: number): string {

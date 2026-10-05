@@ -155,3 +155,48 @@ export async function searchPlaces(query: string): Promise<Place[]> {
   if (fallback.length > 0) cacheSet(key, fallback);
   return fallback;
 }
+
+// ---------------------------------------------------------------- reverse
+// A map tap or a shared link gives coordinates only. "30.2500, -97.7500" in
+// the search box tells the user nothing, so resolve a street-level label.
+// Nominatim (free, no key) — Photon's /reverse sends no CORS header, so a
+// browser cannot call it. Null when the lookup fails; callers keep the
+// coordinate label then.
+
+/** Pure: Nominatim reverse JSON → short label ("1100 Congress Ave, Austin"). */
+export function labelFromNominatimReverse(json: unknown): string | null {
+  if (typeof json !== 'object' || json === null) return null;
+  const j = json as { address?: Record<string, unknown>; name?: unknown; display_name?: unknown };
+  const a = j.address ?? {};
+  const road = str(a.road) || str(a.pedestrian) || str(a.footway);
+  const house = str(a.house_number);
+  const name = str(j.name);
+  const place = str(a.city) || str(a.town) || str(a.village) || str(a.suburb);
+  const line = road ? (house ? `${house} ${road}` : name && name !== road ? `${name}, ${road}` : road) : name;
+  if (line) return place && !line.includes(place) ? `${line}, ${place}` : line;
+  const first = str(j.display_name).split(',')[0]?.trim();
+  return first || place || null;
+}
+
+const reverseCache = new Map<string, string>();
+
+export async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
+  const hit = reverseCache.get(key);
+  if (hit) return hit;
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&lat=${lat}&lon=${lon}`,
+    );
+    if (!res.ok) return null;
+    const label = labelFromNominatimReverse(await res.json());
+    if (label) {
+      if (reverseCache.size > 200) reverseCache.clear();
+      reverseCache.set(key, label); // never negative-cache
+    }
+    return label;
+  } catch {
+    return null;
+  }
+}

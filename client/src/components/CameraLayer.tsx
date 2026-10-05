@@ -10,6 +10,11 @@ interface CameraLayerProps {
   map: maplibregl.Map | null;
   cameras: CameraPoint[];
   bufferMeters: number;
+  /**
+   * Fade cameras while a route is shown, so the ones ON the selected route
+   * (re-drawn emphasized by MapView) stand out from the city-wide scatter.
+   */
+  dimmed?: boolean;
 }
 
 const BUF_SRC = 'gr-cam-buffers';
@@ -17,6 +22,8 @@ const DOT_SRC = 'gr-cam-dots';
 const BUF_FILL = 'gr-cam-buffer-fill';
 const BUF_LINE = 'gr-cam-buffer-line';
 const DOT_LAYER = 'gr-cam-dots';
+/** Exported so route layers can be inserted beneath the camera dots. */
+export const CAMERA_DOT_LAYER = DOT_LAYER;
 
 // Cap on rendered markers: zoomed-out/US viewports can return hundreds of
 // cameras (App fetches with a server limit). Rendering is capped so the map
@@ -117,7 +124,7 @@ function dotsFc(visible: CameraPoint[]): FeatureCollection {
   };
 }
 
-export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerProps) {
+export default function CameraLayer({ map, cameras, bufferMeters, dimmed = false }: CameraLayerProps) {
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
   // Latest inputs for the lifecycle effect below, which installs the sources
@@ -258,6 +265,40 @@ export default function CameraLayer({ map, cameras, bufferMeters }: CameraLayerP
       /* data sync must never break the map */
     }
   }, [map, cameras, bufferMeters]);
+
+  useEffect(() => {
+    if (!map) return;
+    const apply = () => {
+      try {
+        // setPaintProperty itself emits styledata: only write on a real change.
+        const target = dimmed ? 0.5 : 1;
+        const cur = map.getLayer(DOT_LAYER)
+          ? map.getPaintProperty(DOT_LAYER, 'circle-stroke-opacity') ?? 1
+          : null;
+        if (cur === target && (!map.getLayer(BUF_FILL) || map.getPaintProperty(BUF_FILL, 'fill-opacity') === (dimmed ? 0.025 : 0.06))) {
+          return;
+        }
+        if (map.getLayer(DOT_LAYER)) {
+          map.setPaintProperty(
+            DOT_LAYER,
+            'circle-opacity',
+            dimmed ? 0.4 : ['interpolate', ['linear'], ['zoom'], 5, 0.55, 12, 0.95],
+          );
+          map.setPaintProperty(DOT_LAYER, 'circle-stroke-opacity', dimmed ? 0.5 : 1);
+        }
+        if (map.getLayer(BUF_FILL)) map.setPaintProperty(BUF_FILL, 'fill-opacity', dimmed ? 0.025 : 0.06);
+        if (map.getLayer(BUF_LINE)) map.setPaintProperty(BUF_LINE, 'line-opacity', dimmed ? 0.3 : 1);
+      } catch {
+        /* cosmetic */
+      }
+    };
+    apply();
+    // Layers may (re)install after this effect ran (style load, buffers toggling on zoom).
+    map.on('styledata', apply);
+    return () => {
+      map.off('styledata', apply);
+    };
+  }, [map, dimmed]);
 
   const hidden = Math.max(0, cameras.length - MAX_RENDERED_CAMERAS);
   if (hidden <= 0) return null;
