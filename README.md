@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/repo-logo.png" alt="Ghost Route logo" width="130" style="border-radius: 50%;">
+</p>
+
 <h1 align="center">Ghost Route</h1>
 
 <p align="center"><strong>Flock-camera-aware routing.</strong> See ALPR cameras near you and get driving routes ranked by camera exposure — take the path with the fewest cameras, ideally zero.</p>
@@ -6,7 +10,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/node-%3E%3D20-339933" alt="Node 20+">
   <img src="https://img.shields.io/badge/stack-TypeScript%20%C2%B7%20React%20%C2%B7%20Express-3178c6" alt="TypeScript, React, Express">
-  <img src="https://img.shields.io/badge/tests-353%2F353-brightgreen" alt="208 of 208 tests passing">
+  <img src="https://img.shields.io/badge/tests-367%2F367-brightgreen" alt="367 of 367 tests passing">
 </p>
 
 <p align="center">
@@ -16,6 +20,10 @@
 ## Why it exists
 
 Flock Safety ALPR cameras log every passing plate. Ghost Route makes that exposure visible and avoidable: it overlays known cameras on a map and ranks real driving routes by how many you'll pass — with AI-powered ranking when you bring a key, and a solid deterministic fallback when you don't.
+
+<p align="center">
+  <img src="docs/app-showcase.png" alt="Ghost Route Live Navigation & Camera Proximity Interface" width="100%">
+</p>
 
 | | |
 |---|---|
@@ -50,15 +58,27 @@ Open the UI, click the map to set origin then destination (Alt-click restarts), 
 ## How avoidance works
 
 <p align="center">
-  <img src="docs/repo-architecture.png" alt="Ghost Route architecture" width="90%">
+  <img src="docs/camera-proximity-avoidance.png" alt="ALPR Camera Proximity & Directional Avoidance Model" width="100%">
 </p>
 
-1. **OSRM** returns up to 3 alternative road routes.
-2. **Scoring** — cameras within `bufferMeters` of the polyline dominate: `score = exposures × 10000 + distanceM`.
-3. **Detours** — if every alternative is exposed, two waypoint-detour candidates (±1000 m perpendicular offsets) are re-routed via OSRM and re-scored.
-4. **Ranking** — Jev picks the winner; below `CONFIDENCE_THRESHOLD` (default `0.40`) the heuristic best is served instead, flagged `fallbackUsed: true`.
+1. **OSRM Candidate Generation** — returns up to 3 alternative road routes between your origin and destination.
+2. **Direction-Aware Exposure Scoring** — cameras within `bufferMeters` of the polyline dominate: `score = exposures × 10000 + distanceM`. Most of the 141,000+ camera nodes carry a facing angle (`direction`), and a camera only triggers an exposure when the vehicle travels through its ~±60° optical surveillance cone. Opposing traffic and non-intersecting street angles are not penalized.
+3. **Detour Synthesis** — if every alternative route has camera exposure, perpendicular waypoint offsets (±1000 m) are synthesized, re-routed through OSRM, and re-scored.
+4. **Dual-Brain Ranking** — the TypeSafe JEV AI model (`system_one`) evaluates the candidate routes; if confidence falls below `CONFIDENCE_THRESHOLD` (default `0.40`) or offline, the deterministic heuristic best is served seamlessly (`fallbackUsed: true`).
 
-Most `141,000+` camera nodes carry a facing (`direction`), and a camera only counts when your route actually travels through the way it points (~±60°). A camera facing west does not penalise an eastbound street. Pass `respectDirection: false` to score every camera omnidirectionally, as before.
+Pass `respectDirection: false` to score every camera omnidirectionally (buffering all cameras regardless of facing).
+
+## System Architecture
+
+<p align="center">
+  <img src="docs/repo-architecture.png" alt="Ghost Route System Architecture" width="100%">
+</p>
+
+Ghost Route is built as a lightweight, privacy-first navigation stack:
+- **Client Tier**: React 18 SPA with CARTO Voyager vector tiles, real-time GPS Follow-Mode navigation HUD, directional turn-by-turn alerts, and client-side BYOK key management (`localStorage`).
+- **API Engine (Express / TypeScript)**: Type-safe REST endpoints (`/api/route`, `/api/cameras`), request validation via Zod, rate limiting, and directional exposure filtering.
+- **Spatial & Routing Engine**: OSRM routing backend supporting multi-alternative generation and perpendicular detour synthesis (±1000m offsets) evaluated against an in-memory R-tree of 141,000+ verified ALPR camera nodes.
+- **Dual Ranking Engine**: TypeSafe JEV AI ranker (`system_one` decision head) with automatic low-confidence fallback to deterministic scoring (`score = exposures × 10000 + distanceM`).
 
 ## Route options
 

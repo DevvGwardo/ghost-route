@@ -2,6 +2,10 @@
 
 Source of truth for shapes: `PROJECT_BRIEF.md` (API contract §9-18). This doc adds module boundaries and data flow only.
 
+<p align="center">
+  <img src="repo-architecture.png" alt="Ghost Route System Architecture" width="100%">
+</p>
+
 ## 1. Modules (repo paths)
 
 | Module | Files | Owns |
@@ -23,6 +27,11 @@ Source of truth for shapes: `PROJECT_BRIEF.md` (API contract §9-18). This doc a
 2. Routes layer validates via zod (400 on bad lat/lon), applies rate limit.
 3. Routing svc queries OSRM (`alternatives=3`) at the path for the requested profile (`security.routePathFor`: demo `/route/v1/{driving,foot,bike}`, FOSSGIS `/routed-{car,foot,bike}/route/v1/…`, custom always driving), returns polylines + distance/duration. Cache keys include the profile. A profile failure falls back to driving with `profileFallback:true` rather than erroring.
 4. Avoidance scores each alternative: cameras within `bufferMeters` of polyline (haversine point-to-segment) → `exposures[]`, `exposureCount`. With `respectDirection` (default true), a camera carrying a known `direction` is only counted when the route's travel heading at the nearest point is within ~60° of that bearing (`headingAtNearest` / `angleDiffDeg` in `avoid.ts` + `services/scoring.ts`); directionless cameras are unaffected. `cameraFilter` is applied to the bbox query (via `store.camerasInBboxPage`), so every later stage — clean search, per-step exposure, JEV input — sees the same narrowed set; `maxDistM` is enforced by the scoring passes.
+
+<p align="center">
+  <img src="camera-proximity-avoidance.png" alt="Directional Facing & Buffer Zone Model" width="100%">
+</p>
+
 5. If `avoidFlock` and all alternatives exposed → avoidance builds detour candidates (offset midpoints perpendicular ~250/500m, re-query OSRM), re-scores.
 6. Jev ranks: one `choice` question over candidate ids (criteria: exposure first, time second). Confidence ≥ `CONFIDENCE_THRESHOLD` (0.40) wins; below → heuristic (lowest exposure, then shortest duration). Returns `rankedBy`, per-route `jev` block, top-level `jevMode`.
 
